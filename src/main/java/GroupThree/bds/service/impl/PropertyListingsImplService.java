@@ -1,5 +1,6 @@
 package GroupThree.bds.service.impl;
 
+import GroupThree.bds.configurations.CanEditPost;
 import GroupThree.bds.dtos.PropertyImageDTO;
 import GroupThree.bds.dtos.PropertyListingsDTO;
 import GroupThree.bds.entity.*;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -79,12 +81,14 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     }
 
     @Override
+    @CanEditPost
     public PropertyListings updatePropertyListings(
             Long id,
             PropertyListingsDTO dto
     ) {
         PropertyListings existingProperty = repository.findById(id)
                 .orElseThrow(() -> new AppException("Property with id= "+ id + " not found", NOT_FOUND));
+
 
         dto.setUser(existingProperty.getUser().getId());
 
@@ -103,6 +107,7 @@ public class PropertyListingsImplService implements IPropertyListingsService {
 
         return repository.save(existingProperty);
     }
+
 
     @Override
     @Transactional
