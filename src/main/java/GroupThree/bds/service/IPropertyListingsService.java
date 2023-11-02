@@ -34,9 +34,9 @@ public interface IPropertyListingsService {
             PageRequest pageRequest
     );
 
-    List<PropertyListings> findByAreaSqmBetween(float minArea, float maxArea);
+    PropertyListings getByCode(String code);
 
-    List<PropertyListings> findByListingStatusIn(List<ListingStatus> listingStatuses);
+    Page<PropertyListings> findByListingStatusIn(ListingStatus listingStatuses,PageRequest pageRequest);
 
     // Search by User and Listing Status: Retrieve property listings created by a specific user and with a specific listing status.
     List<PropertyListings> findByUserAndListingStatus(User user, ListingStatus listingStatus);

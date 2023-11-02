@@ -5,6 +5,7 @@ import GroupThree.bds.entity.PropertyListings;
 import GroupThree.bds.entity.PropertyType;
 import GroupThree.bds.entity.User;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,9 +20,9 @@ import java.util.Optional;
 public interface PropertyListingsRepository extends JpaRepository<PropertyListings,Long> {
     // loc theo tung phan
     @Query("SELECT p FROM PropertyListings p " +
-            "WHERE (:province is null or LOWER(p.province) = LOWER(:province)) " +
-            "AND (:district is null or LOWER(p.district)= LOWER(:district)) " +
-            "AND (:commune is null or LOWER(p.commune) = LOWER(:commune)) " +
+            "WHERE (:province is null or p.province = :province) " +
+            "AND (:district is null or p.district= :district) " +
+            "AND (:commune is null or p.commune = :commune) " +
             "AND (:maxAreaSqm is null or p.areaSqm <= :maxAreaSqm) " +
             "AND (:minAreaSqm is null or p.areaSqm >= :minAreaSqm) " +
             "AND (:maxPrice is null or p.price <= :maxPrice) " +
@@ -48,7 +49,7 @@ public interface PropertyListingsRepository extends JpaRepository<PropertyListin
     PropertyListings findByCode (String code);
 
     // Search by ListingStatus
-    List<PropertyListings> findByListingStatus(ListingStatus listingStatus);
+    Page<PropertyListings> findByListingStatus(ListingStatus listingStatus, PageRequest pageRequest);
 
     // Search by price, sorted from high to low
     List<PropertyListings> findByOrderByPriceDesc();

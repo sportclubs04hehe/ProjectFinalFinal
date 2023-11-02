@@ -133,15 +133,21 @@ public class PropertyListingsImplService implements IPropertyListingsService {
         );
     }
 
-
     @Override
-    public List<PropertyListings> findByAreaSqmBetween(float minArea, float maxArea) {
-        return null;
+    public PropertyListings getByCode(String code){
+        if(!existByCode(code)){
+           throw new AppException("Code =" + code +" not found",NOT_FOUND);
+        }
+        return repository.findByCode(code);
     }
 
     @Override
-    public List<PropertyListings> findByListingStatusIn(List<ListingStatus> listingStatuses) {
-        return null;
+    public Page<PropertyListings> findByListingStatusIn(ListingStatus listingStatuses,PageRequest pageRequest) {
+        Page<PropertyListings> propertyListings = repository.findByListingStatus(listingStatuses,pageRequest);
+        if(propertyListings.isEmpty()){
+            throw new AppException("No property listings found with the given listing statuses.", NOT_FOUND);
+        }
+        return propertyListings;
     }
 
     @Override

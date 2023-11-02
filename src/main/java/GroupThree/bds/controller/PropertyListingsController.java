@@ -11,10 +11,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
@@ -22,6 +20,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -111,7 +110,7 @@ public class PropertyListingsController {
             @RequestParam(name = "minAreaSqm", required = false) Double minAreaSqm,
             @RequestParam(name = "maxPrice", required = false) BigDecimal maxPrice,
             @RequestParam(name = "minPrice", required = false) BigDecimal minPrice,
-            @RequestParam(name = "propertyType", required = false, defaultValue = "") String propertyType,
+            @RequestParam(name = "propertyType", required = false) PropertyType propertyType,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size
     ) {
@@ -121,15 +120,13 @@ public class PropertyListingsController {
                return new ResponseEntity<>("Invalid page number", BAD_REQUEST);
            }
 
-           PropertyType enumProperType = PropertyType.valueOf(propertyType);
-
            PageRequest pageRequest = PageRequest.of(
                    page - 1, size, // => jpa đang là 1 trừ 1 = 0 đó là quy ước của jpa
-                   Sort.by("id").ascending()
+                   Sort.by("id").descending()
            );
 
            Page<PropertyListings> propertyListings = service.searchPropertyListings(
-                   province, district, commune, maxAreaSqm,minAreaSqm , maxPrice, minPrice, enumProperType ,pageRequest
+                   province, district, commune, maxAreaSqm,minAreaSqm , maxPrice, minPrice, propertyType ,pageRequest
            );
 
            int totalPage = propertyListings.getTotalPages();
@@ -145,6 +142,56 @@ public class PropertyListingsController {
            return ResponseEntity.badRequest().body("An error occurred while processing the request.");
        }
 
+    }
+
+    @GetMapping("/code/{code}")
+    public ResponseEntity<?> getByCode(@PathVariable String code){
+        try{
+            PropertyListings propertyListings = service.getByCode(code);
+            if(propertyListings != null){
+                return ResponseEntity.ok().body(propertyListings);
+            }else {
+                return ResponseEntity.notFound().build();
+            }
+        }catch (Exception e){
+            return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/by-listing-status")
+    public ResponseEntity<?> getByStatus(
+            @RequestParam(name = "listingStatuses") List<ListingStatus> listingStatuses,
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
+    ){
+        try{
+            if (page < 1) {
+                return new ResponseEntity<>("Invalid page number", BAD_REQUEST);
+            }
+
+            PageRequest pageRequest = PageRequest.of(
+                    page -1, size,
+                    Sort.by("id").descending()
+            );
+
+            List<PropertyListings> mergedPropertyListings = new ArrayList<>();
+
+            for (ListingStatus status : listingStatuses) {
+                Page<PropertyListings> propertyListings = service.findByListingStatusIn(status, pageRequest);
+                mergedPropertyListings.addAll(propertyListings.getContent());
+            }
+
+            Page<PropertyListings> resultPage = new PageImpl<>(mergedPropertyListings, pageRequest, mergedPropertyListings.size());
+
+            if(resultPage.isEmpty()){
+                return new ResponseEntity<>(NOT_FOUND);
+            }else {
+                return new ResponseEntity<>(resultPage, HttpStatus.OK);
+            }
+
+        }catch (Exception e){
+            return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
+        }
     }
 
     /** When need fake data is use*/
