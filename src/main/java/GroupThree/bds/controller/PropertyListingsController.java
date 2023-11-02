@@ -4,11 +4,17 @@ import GroupThree.bds.dtos.PropertyListingsDTO;
 import GroupThree.bds.entity.ListingStatus;
 import GroupThree.bds.entity.PropertyListings;
 import GroupThree.bds.entity.PropertyType;
+import GroupThree.bds.response.PropertySearchResponse;
 import GroupThree.bds.service.IPropertyListingsService;
 import com.github.javafaker.Faker;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
@@ -21,12 +27,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.springframework.http.HttpStatus.CREATED;
-import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.HttpStatus.*;
 
 @RestController
 @RequestMapping("${api.prefix}/properties")
 @RequiredArgsConstructor
+@Slf4j
 public class PropertyListingsController {
 
     private final IPropertyListingsService service;
@@ -96,6 +102,50 @@ public class PropertyListingsController {
     }
 
 
+    @GetMapping
+    public ResponseEntity<?> searchPropertyListings(
+            @RequestParam(name = "province", required = false) String province,
+            @RequestParam(name = "district", required = false) String district,
+            @RequestParam(name = "commune", required = false) String commune,
+            @RequestParam(name = "maxAreaSqm", required = false) Double maxAreaSqm,
+            @RequestParam(name = "minAreaSqm", required = false) Double minAreaSqm,
+            @RequestParam(name = "maxPrice", required = false) BigDecimal maxPrice,
+            @RequestParam(name = "minPrice", required = false) BigDecimal minPrice,
+            @RequestParam(name = "propertyType", required = false, defaultValue = "") String propertyType,
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
+    ) {
+
+       try{
+           if (page < 1) {
+               return new ResponseEntity<>("Invalid page number", BAD_REQUEST);
+           }
+
+           PropertyType enumProperType = PropertyType.valueOf(propertyType);
+
+           PageRequest pageRequest = PageRequest.of(
+                   page - 1, size, // => jpa đang là 1 trừ 1 = 0 đó là quy ước của jpa
+                   Sort.by("id").ascending()
+           );
+
+           Page<PropertyListings> propertyListings = service.searchPropertyListings(
+                   province, district, commune, maxAreaSqm,minAreaSqm , maxPrice, minPrice, enumProperType ,pageRequest
+           );
+
+           int totalPage = propertyListings.getTotalPages();
+           List<PropertyListings> propertyListingsPage = propertyListings.getContent();
+
+           return ResponseEntity.ok(PropertySearchResponse.builder()
+                   .propertyListings(propertyListingsPage)
+                   .totalPage(totalPage)
+                   .build());
+       }catch (Exception e){
+           // Log the exception for debugging purposes
+           e.printStackTrace();
+           return ResponseEntity.badRequest().body("An error occurred while processing the request.");
+       }
+
+    }
 
     /** When need fake data is use*/
     @PostMapping("/generateFakePropertyListings")
@@ -118,7 +168,7 @@ public class PropertyListingsController {
                     .commune(faker.address().city())
                     .propertyType(PropertyType.values()[RandomUtils.nextInt(0, PropertyType.values().length)])
                     .price(BigDecimal.valueOf(faker.number().randomDouble(2, 100, 1000000)))
-                    .areaSqm((float) faker.number().randomDouble(2, 10, 1000))
+                    .areaSqm(faker.number().randomDouble(2, 10, 1000))
                     .numberOfRooms(faker.number().numberBetween(1, 10))
                     .numberOfBathrooms(faker.number().numberBetween(1, 5))
                     .parking(faker.bool().bool())

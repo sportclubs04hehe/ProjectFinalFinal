@@ -12,14 +12,14 @@ import GroupThree.bds.service.IPropertyListingsService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -54,7 +54,7 @@ public class PropertyListingsImplService implements IPropertyListingsService {
                     .numberOfRooms(dto.getNumberOfRooms())
                     .numberOfBathrooms(dto.getNumberOfBathrooms())
                     .parking(dto.getParking())
-                    .listingStatus(dto.getListingStatus())
+                    .listingStatus(ListingStatus.PENDING)
                     .build();
 
             if (propertyListings.getCode() == null || propertyListings.getCode().isEmpty()) {
@@ -117,9 +117,22 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     }
 
     @Override
-    public List<PropertyListings> findByPropertyTypeAndPriceBetween(PropertyType propertyType, BigDecimal minPrice, BigDecimal maxPrice) {
-        return null;
+    public Page<PropertyListings> searchPropertyListings(
+            String province,
+            String district,
+            String commune,
+            Double maxAreaSqm,
+            Double minAreaSqm,
+            BigDecimal maxPrice,
+            BigDecimal minPrice,
+            PropertyType propertyType,
+            PageRequest pageRequest
+    ) {
+        return repository.searchPropertyListings(
+                province, district, commune, maxAreaSqm, minAreaSqm , maxPrice, minPrice, propertyType, pageRequest
+        );
     }
+
 
     @Override
     public List<PropertyListings> findByAreaSqmBetween(float minArea, float maxArea) {

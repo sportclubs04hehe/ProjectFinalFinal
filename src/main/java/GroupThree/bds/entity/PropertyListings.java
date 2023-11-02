@@ -44,7 +44,7 @@ public class PropertyListings {
     private BigDecimal price;
 
     @Column(name = "area_sqm", nullable = false)
-    private float areaSqm;
+    private Double areaSqm;
 
     private Integer numberOfRooms; // số phòng
     private Integer numberOfBathrooms; // số phòng tắm

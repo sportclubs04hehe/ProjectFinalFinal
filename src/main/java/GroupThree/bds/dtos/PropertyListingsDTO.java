@@ -3,6 +3,8 @@ package GroupThree.bds.dtos;
 import GroupThree.bds.entity.ListingStatus;
 import GroupThree.bds.entity.PropertyType;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -44,6 +46,7 @@ public class PropertyListingsDTO {
 
     @JsonProperty("property_type")
     @NotNull( message = "Property Type is required")
+    @Enumerated(EnumType.STRING)
     private PropertyType propertyType;
 
     @Positive(message = "Price must be greater than 0")
@@ -53,7 +56,7 @@ public class PropertyListingsDTO {
     @JsonProperty("area_sqm")
     @NotNull( message = "areaSqm is required")
     @PositiveOrZero(message = "Area Sqm must be zero or positive")
-    private float areaSqm;
+    private Double areaSqm;
 
     @PositiveOrZero(message = "Số phòng không thể là số âm")
     private Integer numberOfRooms; // số phòng
