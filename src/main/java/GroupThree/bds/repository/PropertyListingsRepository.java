@@ -51,6 +51,9 @@ public interface PropertyListingsRepository extends JpaRepository<PropertyListin
     // Search by ListingStatus
     Page<PropertyListings> findByListingStatus(ListingStatus listingStatus, PageRequest pageRequest);
 
+    @Query("select p from PropertyListings p left join fetch p.productImages where p.id = :propertyId")
+    Optional<PropertyListings> getDetailProperty(@Param("propertyId") Long propertyId);
+
     // Search by price, sorted from high to low
     List<PropertyListings> findByOrderByPriceDesc();
 

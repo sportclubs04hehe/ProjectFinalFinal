@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Table(name = "_property_listings")
@@ -58,5 +59,8 @@ public class PropertyListings {
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @JsonBackReference
     private User user;
+
+    @OneToMany(mappedBy = "listings", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<PropertyImage> productImages;
 
 }

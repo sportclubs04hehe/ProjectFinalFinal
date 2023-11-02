@@ -1,9 +1,12 @@
 package GroupThree.bds.controller;
 
+import GroupThree.bds.dtos.PropertyImageDTO;
 import GroupThree.bds.dtos.PropertyListingsDTO;
 import GroupThree.bds.entity.ListingStatus;
+import GroupThree.bds.entity.PropertyImage;
 import GroupThree.bds.entity.PropertyListings;
 import GroupThree.bds.entity.PropertyType;
+import GroupThree.bds.exceptions.DataNotFoundException;
 import GroupThree.bds.response.PropertySearchResponse;
 import GroupThree.bds.service.IPropertyListingsService;
 import com.github.javafaker.Faker;
@@ -13,17 +16,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatus.*;
@@ -192,6 +199,76 @@ public class PropertyListingsController {
         }catch (Exception e){
             return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
         }
+    }
+
+
+    @PostMapping(value = "/uploads/{id}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadImages(
+            @PathVariable("id") Long propertyId,
+            @ModelAttribute("files") List<MultipartFile> files
+    ){
+        try {
+            PropertyListings existingProperty = service.getPropertyById(propertyId);
+            files = files == null ? new ArrayList<MultipartFile>() : files;
+            if(files.size() > PropertyImage.MAXIMUM_IMAGES_PER_PROPERTY) {
+                return ResponseEntity.badRequest().body("You can only upload a maximum of 5 photos");
+            }
+            List<PropertyImage> productImages = new ArrayList<>();
+            for (MultipartFile file : files) {
+                if(file.getSize() == 0) {
+                    continue;
+                }
+                // Kiểm tra kích thước file và định dạng
+                if(file.getSize() > 10 * 1024 * 1024) { // Kích thước > 10MB
+                    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                            .body("The file size is too large, only at least 10MB");
+                }
+                String contentType = file.getContentType();
+                if(contentType == null || !contentType.startsWith("image/")) {
+                    return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                            .body("The file is not in the correct format and is not supported");
+                }
+                // Lưu file và cập nhật thumbnail trong DTO
+                String filename = storeFile(file); // Thay thế hàm này với code của bạn để lưu file
+                //lưu vào đối tượng product trong DB
+                PropertyImage productImage = service.createProductImage(
+                        existingProperty.getId(),
+                        PropertyImageDTO.builder()
+                                .imageUrl(filename)
+                                .build()
+                );
+                productImages.add(productImage);
+            }
+            return ResponseEntity.ok().body(productImages);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    private String storeFile(MultipartFile file) throws IOException {
+        if (!isImageFile(file) || file.getOriginalFilename() == null) {
+            throw new IOException("Invalid image format");
+        }
+        String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+        // Thêm UUID vào trước tên file để đảm bảo tên file là duy nhất
+        String uniqueFilename = UUID.randomUUID().toString() + "_" + filename;
+        // Đường dẫn đến thư mục mà bạn muốn lưu file
+        java.nio.file.Path uploadDir = Paths.get("uploads");
+        // Kiểm tra và tạo thư mục nếu nó không tồn tại
+        if (!Files.exists(uploadDir)) {
+            Files.createDirectories(uploadDir);
+        }
+        // Đường dẫn đầy đủ đến file
+        java.nio.file.Path destination = Paths.get(uploadDir.toString(), uniqueFilename);
+        // Sao chép file vào thư mục đích
+        Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
+        return uniqueFilename;
+    }
+
+    private boolean isImageFile(MultipartFile file) {
+        String contentType = file.getContentType();
+        return contentType != null && contentType.startsWith("image/");
     }
 
     /** When need fake data is use*/

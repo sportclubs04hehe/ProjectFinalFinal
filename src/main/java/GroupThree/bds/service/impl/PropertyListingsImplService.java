@@ -1,11 +1,12 @@
 package GroupThree.bds.service.impl;
 
+import GroupThree.bds.dtos.PropertyImageDTO;
 import GroupThree.bds.dtos.PropertyListingsDTO;
-import GroupThree.bds.entity.ListingStatus;
-import GroupThree.bds.entity.PropertyListings;
-import GroupThree.bds.entity.PropertyType;
-import GroupThree.bds.entity.User;
+import GroupThree.bds.entity.*;
 import GroupThree.bds.exceptions.AppException;
+import GroupThree.bds.exceptions.DataNotFoundException;
+import GroupThree.bds.exceptions.InvalidParamException;
+import GroupThree.bds.repository.PropertyImageRepository;
 import GroupThree.bds.repository.PropertyListingsRepository;
 import GroupThree.bds.repository.UserRepository;
 import GroupThree.bds.service.IPropertyListingsService;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -29,6 +31,7 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class PropertyListingsImplService implements IPropertyListingsService {
 
     private final PropertyListingsRepository repository;
+    private final PropertyImageRepository imageRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
 
@@ -76,7 +79,10 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     }
 
     @Override
-    public PropertyListings updatePropertyListings(Long id, PropertyListingsDTO dto) {
+    public PropertyListings updatePropertyListings(
+            Long id,
+            PropertyListingsDTO dto
+    ) {
         PropertyListings existingProperty = repository.findById(id)
                 .orElseThrow(() -> new AppException("Property with id= "+ id + " not found", NOT_FOUND));
 
@@ -142,12 +148,47 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     }
 
     @Override
-    public Page<PropertyListings> findByListingStatusIn(ListingStatus listingStatuses,PageRequest pageRequest) {
+    public Page<PropertyListings> findByListingStatusIn(
+            ListingStatus listingStatuses,
+            PageRequest pageRequest
+    ) {
         Page<PropertyListings> propertyListings = repository.findByListingStatus(listingStatuses,pageRequest);
         if(propertyListings.isEmpty()){
             throw new AppException("No property listings found with the given listing statuses.", NOT_FOUND);
         }
         return propertyListings;
+    }
+
+    @Override
+    public PropertyListings getPropertyById(Long id) throws DataNotFoundException {
+        Optional<PropertyListings> propertyListings = repository.getDetailProperty(id);
+        if(propertyListings.isPresent()){
+            return propertyListings.get();
+        }
+        throw new DataNotFoundException("Cannot find product with id =" + id);
+    }
+
+    @Override
+    public PropertyImage createProductImage(
+            Long propertyId,
+            PropertyImageDTO dto
+    ) throws Exception {
+        PropertyListings existingProperty = repository.findById(propertyId)
+                .orElseThrow(() -> new AppException("Property with id= "+ propertyId + " not found", NOT_FOUND));
+
+        PropertyImage newPropertyImage = PropertyImage.builder()
+                .listings(existingProperty)
+                .imageUrl(dto.getImageUrl())
+                .build();
+
+        //Ko cho insert quá 5 ảnh cho 1 sản phẩm
+        int size = imageRepository.findByListingsId(propertyId).size();
+        if(size >= PropertyImage.MAXIMUM_IMAGES_PER_PROPERTY){
+            throw new InvalidParamException(
+                    "Number of images must be <= "
+                            +PropertyImage.MAXIMUM_IMAGES_PER_PROPERTY);
+        }
+        return imageRepository.save(newPropertyImage);
     }
 
     @Override
