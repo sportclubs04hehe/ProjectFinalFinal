@@ -66,6 +66,9 @@ public class WebSecurityConfig {
 
                 })
                 .csrf(AbstractHttpConfigurer::disable);
+
+        // Xong lúc nào ông nhận api thì ghép khớp đường dẫn là được, vì ở đây tôi cấu hình
+        // full quyền rồi
         http.cors(new Customizer<CorsConfigurer<HttpSecurity>>() {
             @Override
             public void customize(CorsConfigurer<HttpSecurity> httpSecurityCorsConfigurer) {
