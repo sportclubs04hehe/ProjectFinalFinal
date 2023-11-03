@@ -43,7 +43,7 @@ public interface PropertyListingsRepository extends JpaRepository<PropertyListin
 
     boolean existsByCode (String code);
 
-    List<PropertyListings> findByUserId (Long id);
+    Page<PropertyListings> findByUserId (Long id, PageRequest pageRequest);
 
     List<PropertyListings> findByPropertyType (PropertyType propertyType);
 

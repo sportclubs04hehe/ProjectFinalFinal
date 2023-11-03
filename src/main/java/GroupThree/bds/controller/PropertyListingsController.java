@@ -100,13 +100,32 @@ public class PropertyListingsController {
         }
     }
 
-    @GetMapping("/user/{id}")
+    @GetMapping("/user")
     public ResponseEntity<?> getPropertyByUser(
-            @PathVariable long id
+            @RequestParam(name = "userId") Long userId,
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
     ) {
         try {
-            List<PropertyListings> propertyListings = service.findByUserId(id);
-            return new ResponseEntity<>(propertyListings,OK);
+            if (page < 1) {
+                return new ResponseEntity<>("Invalid page number", BAD_REQUEST);
+            }
+
+            PageRequest pageRequest = PageRequest.of(
+                    page - 1, size, // => jpa đang là 1 trừ 1 = 0 đó là quy ước của jpa
+                    Sort.by("id").descending()
+            );
+
+            Page<PropertyListings> propertyListings = service.findByUserId(userId,pageRequest);
+
+            int totalPage = propertyListings.getTotalPages();
+            List<PropertyListings> propertyListingsPage = propertyListings.getContent();
+
+            return ResponseEntity.ok(PropertySearchResponse.builder()
+                    .propertyListings(propertyListingsPage)
+                    .totalPage(totalPage)
+                    .build());
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

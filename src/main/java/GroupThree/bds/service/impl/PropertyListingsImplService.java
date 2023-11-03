@@ -121,8 +121,8 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     }
 
     @Override
-    public List<PropertyListings> findByUserId(Long id) {
-        return repository.findByUserId(id);
+    public Page<PropertyListings> findByUserId(Long id,PageRequest pageRequest) {
+        return repository.findByUserId(id,pageRequest);
     }
 
     @Override

@@ -20,7 +20,7 @@ public interface IPropertyListingsService {
 
     boolean existByCode (String code);
 
-    List<PropertyListings> findByUserId(Long user);
+    Page<PropertyListings> findByUserId(Long user,PageRequest pageRequest);
 
     Page<PropertyListings> searchPropertyListings(
             String province,
