@@ -20,4 +20,8 @@ public class Role {
 
     public static String ADMIN = "ADMIN";
     public static String USER = "USER";
+
+    public Role(String name) {
+        this.name = name;
+    }
 }
