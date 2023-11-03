@@ -7,6 +7,7 @@ import GroupThree.bds.entity.PropertyImage;
 import GroupThree.bds.entity.PropertyListings;
 import GroupThree.bds.entity.PropertyType;
 import GroupThree.bds.exceptions.DataNotFoundException;
+import GroupThree.bds.response.CountsPropertiesResponse;
 import GroupThree.bds.response.PropertySearchResponse;
 import GroupThree.bds.service.IPropertyListingsService;
 import com.github.javafaker.Faker;
@@ -88,7 +89,9 @@ public class PropertyListingsController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProperty(@PathVariable long id) {
+    public ResponseEntity<?> deleteProperty(
+            @PathVariable long id
+    ) {
         try {
             service.deletePropertyListings(id);
             return ResponseEntity.ok(String.format("Product with id = %d deleted successfully", id));
@@ -98,7 +101,9 @@ public class PropertyListingsController {
     }
 
     @GetMapping("/user/{id}")
-    public ResponseEntity<?> getPropertyByUser(@PathVariable long id) {
+    public ResponseEntity<?> getPropertyByUser(
+            @PathVariable long id
+    ) {
         try {
             List<PropertyListings> propertyListings = service.findByUserId(id);
             return new ResponseEntity<>(propertyListings,OK);
@@ -154,7 +159,8 @@ public class PropertyListingsController {
     @GetMapping("/search")
     public ResponseEntity<?> searchPropertyListings(
             @RequestParam(value = "title",required = false) String title,
-            @RequestParam(value = "description",required = false) String description) {
+            @RequestParam(value = "description",required = false) String description
+    ) {
         try{
             List<PropertyListings> results = service.findByTitleContainsOrDescriptionContains(title,description);
 
@@ -173,7 +179,8 @@ public class PropertyListingsController {
     @GetMapping("/search/user-property-type")
     public ResponseEntity<?> searchUserAndPropertyType(
             @RequestParam(value = "userId") Long userId,
-            @RequestParam(value = "propertyType") PropertyType propertyType) {
+            @RequestParam(value = "propertyType") PropertyType propertyType
+    ) {
         try{
             List<PropertyListings> results = service.findByUserAndPropertyType(userId,propertyType);
 
@@ -189,10 +196,49 @@ public class PropertyListingsController {
 
     }
 
+    @GetMapping("/property-count")
+    public ResponseEntity<?> getPropertyListingCounts(
+            @RequestParam(value = "userId") Long userId
+    ) {
+        try{
+            Long results = service.totalPropertyListingsByUser(userId);
+
+            if (results <= 0){
+                return new ResponseEntity<>("No record exists, record = 0", NOT_FOUND);
+            }
+
+            return ResponseEntity.ok(String.format("Total PropertyListing= " + results + " with id=" + userId));
+
+        }catch (Exception e){
+            return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    @GetMapping("/status-count-properties")
+    public ResponseEntity<?> getPropertyListingCountsStatus(
+            @RequestParam(value = "userId") Long userId,
+            @RequestParam(value = "status", required = false) ListingStatus status
+    ) {
+        try{
+            CountsPropertiesResponse results = service.countUserListingStatuses(status,userId);
+            if (status == null){
+                return ResponseEntity.ok(results);
+            }
+
+            return ResponseEntity.ok().body(String.format("Listing Status= " + status + " have " + results.getCount() + " record."));
+
+        }catch (Exception e){
+            return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
+        }
+
+    }
 
 
     @GetMapping("/code/{code}")
-    public ResponseEntity<?> getByCode(@PathVariable String code){
+    public ResponseEntity<?> getByCode(
+            @PathVariable String code
+    ){
         try{
             PropertyListings propertyListings = service.getByCode(code);
 

@@ -9,6 +9,7 @@ import GroupThree.bds.exceptions.InvalidParamException;
 import GroupThree.bds.repository.PropertyImageRepository;
 import GroupThree.bds.repository.PropertyListingsRepository;
 import GroupThree.bds.repository.UserRepository;
+import GroupThree.bds.response.CountsPropertiesResponse;
 import GroupThree.bds.service.IPropertyListingsService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -215,9 +216,37 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     }
 
     @Override
-    public Long countByParkingTrue() {
-        return null;
+    public Long totalPropertyListingsByUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException("User with id= "+ userId + " not found", NOT_FOUND));
+        return repository.countPropertyListingsByUserId(user.getId());
     }
+
+    @Override
+    public CountsPropertiesResponse countUserListingStatuses(ListingStatus status, Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException("User with id= "+ userId + " not found", NOT_FOUND));
+
+        if(status != null){
+            Long count = repository.countByListingStatusAndUserId(status,userId);
+            return new CountsPropertiesResponse(count);
+
+        }else {
+            Long totalCount = repository.countPropertyListingsByUserId(user.getId());
+            Long pendingCount = repository.countByListingStatusAndUserId(ListingStatus.PENDING,user.getId());
+            Long approvedCount = repository.countByListingStatusAndUserId(ListingStatus.APPROVED,user.getId());
+            Long cancelCount = repository.countByListingStatusAndUserId(ListingStatus.CANCEL, user.getId());
+            return CountsPropertiesResponse.builder()
+                    .pendingCount(pendingCount)
+                    .approvedCount(approvedCount)
+                    .cancelCount(cancelCount)
+                    .totalCount(totalCount)
+                    .count(null)
+                    .build();
+        }
+    }
+
 
     @Override
     public List<PropertyListings> findTopNByOrderByPriceDesc(int topN) {

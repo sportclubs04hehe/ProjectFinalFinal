@@ -4,6 +4,7 @@ import GroupThree.bds.dtos.PropertyImageDTO;
 import GroupThree.bds.dtos.PropertyListingsDTO;
 import GroupThree.bds.entity.*;
 import GroupThree.bds.exceptions.DataNotFoundException;
+import GroupThree.bds.response.CountsPropertiesResponse;
 import GroupThree.bds.response.PropertySearchResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -50,7 +51,9 @@ public interface IPropertyListingsService {
 
     List<PropertyListings> findByUserAndPropertyType(Long userId, PropertyType propertyType);
 
-    Long countByParkingTrue();
+    Long totalPropertyListingsByUser(Long userId);
+
+    CountsPropertiesResponse countUserListingStatuses(ListingStatus status, Long userId);
 
     List<PropertyListings> findTopNByOrderByPriceDesc(int topN);
 
