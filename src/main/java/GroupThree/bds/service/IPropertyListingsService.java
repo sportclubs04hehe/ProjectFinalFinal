@@ -46,9 +46,7 @@ public interface IPropertyListingsService {
     // Search by User and Listing Status: Retrieve property listings created by a specific user and with a specific listing status.
     List<PropertyListings> findByUserAndListingStatus(User user, ListingStatus listingStatus);
 
-    List<PropertyListings> findByPropertyTypeAndCommune(PropertyType propertyType, String commune);
-
-    List<PropertyListings> findByTitleContainsOrDescriptionContains(String keyword);
+    List<PropertyListings> findByTitleContainsOrDescriptionContains(String title,String description);
 
     List<PropertyListings> findByUserAndPropertyType(User user, PropertyType propertyType);
 

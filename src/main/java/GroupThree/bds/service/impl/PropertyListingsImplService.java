@@ -1,6 +1,5 @@
 package GroupThree.bds.service.impl;
 
-import GroupThree.bds.configurations.CanEditPost;
 import GroupThree.bds.dtos.PropertyImageDTO;
 import GroupThree.bds.dtos.PropertyListingsDTO;
 import GroupThree.bds.entity.*;
@@ -18,7 +17,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -81,7 +79,6 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     }
 
     @Override
-    @CanEditPost
     public PropertyListings updatePropertyListings(
             Long id,
             PropertyListingsDTO dto
@@ -201,14 +198,13 @@ public class PropertyListingsImplService implements IPropertyListingsService {
         return null;
     }
 
-    @Override
-    public List<PropertyListings> findByPropertyTypeAndCommune(PropertyType propertyType, String commune) {
-        return null;
-    }
 
     @Override
-    public List<PropertyListings> findByTitleContainsOrDescriptionContains(String keyword) {
-        return null;
+    public List<PropertyListings> findByTitleContainsOrDescriptionContains(
+            String title,
+            String description
+    ) {
+        return repository.findByTitleContainsIgnoreCaseOrDescriptionContainsIgnoreCase(title,description);
     }
 
     @Override

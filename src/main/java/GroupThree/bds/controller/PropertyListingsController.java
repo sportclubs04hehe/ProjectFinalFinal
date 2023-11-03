@@ -151,6 +151,23 @@ public class PropertyListingsController {
 
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<?> searchPropertyListings(
+            @RequestParam(value = "title",required = false) String title,
+            @RequestParam(value = "description",required = false) String description) {
+        try{
+            List<PropertyListings> results = service.findByTitleContainsOrDescriptionContains(title,description);
+            if(results != null) {
+                return ResponseEntity.ok(results);
+            }else {
+                return ResponseEntity.notFound().build();
+            }
+        }catch (Exception e){
+            return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
     @GetMapping("/code/{code}")
     public ResponseEntity<?> getByCode(@PathVariable String code){
         try{
@@ -200,6 +217,8 @@ public class PropertyListingsController {
             return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
         }
     }
+
+
 
 
     @PostMapping(value = "/uploads/{id}",
