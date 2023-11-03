@@ -60,16 +60,12 @@ public interface PropertyListingsRepository extends JpaRepository<PropertyListin
     // Search by price, sorted from low to high
     List<PropertyListings> findByOrderByPriceAsc();
 
-//    @Query("SELECT p FROM PropertyListings p WHERE LOWER(p.title) LIKE %:title% OR LOWER(p.description) LIKE %:description%")
-//    List<PropertyListings> findByTitleContainsOrDescriptionContains(
-//            @Param("title") String title,
-//            @Param("description") String description
-//    );
-
     List<PropertyListings> findByTitleContainsIgnoreCaseOrDescriptionContainsIgnoreCase(
             @Param("title") String title,
             @Param("description") String description
     );
+
+    List<PropertyListings> findByUserIdAndPropertyType(Long userId, PropertyType propertyType);
 
     // Define additional custom queries as needed
     @Query("SELECT p FROM PropertyListings p WHERE p.propertyType = :customValue")

@@ -48,7 +48,7 @@ public interface IPropertyListingsService {
 
     List<PropertyListings> findByTitleContainsOrDescriptionContains(String title,String description);
 
-    List<PropertyListings> findByUserAndPropertyType(User user, PropertyType propertyType);
+    List<PropertyListings> findByUserAndPropertyType(Long userId, PropertyType propertyType);
 
     Long countByParkingTrue();
 

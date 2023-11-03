@@ -157,26 +157,50 @@ public class PropertyListingsController {
             @RequestParam(value = "description",required = false) String description) {
         try{
             List<PropertyListings> results = service.findByTitleContainsOrDescriptionContains(title,description);
-            if(results != null) {
-                return ResponseEntity.ok(results);
-            }else {
+
+            if(results.isEmpty()){
                 return ResponseEntity.notFound().build();
             }
+
+            return ResponseEntity.ok(results);
+
         }catch (Exception e){
             return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
         }
 
     }
 
+    @GetMapping("/search/user-property-type")
+    public ResponseEntity<?> searchUserAndPropertyType(
+            @RequestParam(value = "userId") Long userId,
+            @RequestParam(value = "propertyType") PropertyType propertyType) {
+        try{
+            List<PropertyListings> results = service.findByUserAndPropertyType(userId,propertyType);
+
+            if (results.isEmpty()){
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(results);
+
+        }catch (Exception e){
+            return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+
+
     @GetMapping("/code/{code}")
     public ResponseEntity<?> getByCode(@PathVariable String code){
         try{
             PropertyListings propertyListings = service.getByCode(code);
-            if(propertyListings != null){
-                return ResponseEntity.ok().body(propertyListings);
-            }else {
+
+            if(propertyListings.getCode().isEmpty()){
                 return ResponseEntity.notFound().build();
             }
+
+            return ResponseEntity.ok().body(propertyListings);
         }catch (Exception e){
             return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
         }

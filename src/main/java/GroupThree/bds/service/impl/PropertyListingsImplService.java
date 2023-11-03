@@ -208,8 +208,10 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     }
 
     @Override
-    public List<PropertyListings> findByUserAndPropertyType(User user, PropertyType propertyType) {
-        return null;
+    public List<PropertyListings> findByUserAndPropertyType(Long userId, PropertyType propertyType) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException("User with id= "+ userId + " not found", NOT_FOUND));
+        return repository.findByUserIdAndPropertyType(user.getId(),propertyType);
     }
 
     @Override
