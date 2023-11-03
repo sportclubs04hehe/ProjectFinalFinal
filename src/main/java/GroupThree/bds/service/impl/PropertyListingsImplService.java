@@ -53,12 +53,14 @@ public class PropertyListingsImplService implements IPropertyListingsService {
                     .district(dto.getDistrict())
                     .commune(dto.getCommune())
                     .propertyType(dto.getPropertyType())
+                    .realEstateType(dto.getRealEstateType())
                     .price(dto.getPrice())
                     .areaSqm(dto.getAreaSqm())
                     .numberOfRooms(dto.getNumberOfRooms())
                     .numberOfBathrooms(dto.getNumberOfBathrooms())
                     .parking(dto.getParking())
                     .listingStatus(ListingStatus.PENDING)
+//                    .listingStatus(dto.getListingStatus())
                     .build();
 
             if (propertyListings.getCode() == null || propertyListings.getCode().isEmpty()) {
@@ -135,10 +137,11 @@ public class PropertyListingsImplService implements IPropertyListingsService {
             BigDecimal maxPrice,
             BigDecimal minPrice,
             PropertyType propertyType,
+            RealEstateType realEstateType,
             PageRequest pageRequest
     ) {
         return repository.searchPropertyListings(
-                province, district, commune, maxAreaSqm, minAreaSqm , maxPrice, minPrice, propertyType, pageRequest
+                province, district, commune, maxAreaSqm, minAreaSqm , maxPrice, minPrice, propertyType, realEstateType, pageRequest
         );
     }
 

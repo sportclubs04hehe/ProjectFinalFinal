@@ -2,10 +2,7 @@ package GroupThree.bds.controller;
 
 import GroupThree.bds.dtos.PropertyImageDTO;
 import GroupThree.bds.dtos.PropertyListingsDTO;
-import GroupThree.bds.entity.ListingStatus;
-import GroupThree.bds.entity.PropertyImage;
-import GroupThree.bds.entity.PropertyListings;
-import GroupThree.bds.entity.PropertyType;
+import GroupThree.bds.entity.*;
 import GroupThree.bds.exceptions.DataNotFoundException;
 import GroupThree.bds.response.CountsPropertiesResponse;
 import GroupThree.bds.response.PropertySearchResponse;
@@ -144,6 +141,7 @@ public class PropertyListingsController {
             @RequestParam(name = "maxPrice", required = false) BigDecimal maxPrice,
             @RequestParam(name = "minPrice", required = false) BigDecimal minPrice,
             @RequestParam(name = "propertyType", required = false) PropertyType propertyType,
+            @RequestParam(name = "realEstateType", required = false) RealEstateType realEstateType,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size
     ) {
@@ -159,7 +157,7 @@ public class PropertyListingsController {
            );
 
            Page<PropertyListings> propertyListings = service.searchPropertyListings(
-                   province, district, commune, maxAreaSqm,minAreaSqm , maxPrice, minPrice, propertyType ,pageRequest
+                   province, district, commune, maxAreaSqm,minAreaSqm , maxPrice, minPrice, propertyType ,realEstateType ,pageRequest
            );
 
            int totalPage = propertyListings.getTotalPages();
@@ -403,7 +401,7 @@ public class PropertyListingsController {
         return contentType != null && contentType.startsWith("image/");
     }
 
-    /** When need fake data is use*/
+    /** When need fake data is use, not delete*/
     @PostMapping("/generateFakePropertyListings")
     public ResponseEntity<String> generateFakePropertyListings() {
         Faker faker = new Faker();
@@ -425,10 +423,11 @@ public class PropertyListingsController {
                     .propertyType(PropertyType.values()[RandomUtils.nextInt(0, PropertyType.values().length)])
                     .price(BigDecimal.valueOf(faker.number().randomDouble(2, 100, 1000000)))
                     .areaSqm(faker.number().randomDouble(2, 10, 1000))
-                    .numberOfRooms(faker.number().numberBetween(1, 10))
+                    .numberOfRooms(faker.number().numberBetween(1,10))
                     .numberOfBathrooms(faker.number().numberBetween(1, 5))
                     .parking(faker.bool().bool())
                     .listingStatus(ListingStatus.values()[RandomUtils.nextInt(0, ListingStatus.values().length)])
+                    .realEstateType(RealEstateType.values()[RandomUtils.nextInt(0, RealEstateType.values().length)])
                     .user((long) faker.number().numberBetween(1,4)) // Assuming you have a method to get a random user
                     .build();
 
@@ -441,7 +440,10 @@ public class PropertyListingsController {
         return ResponseEntity.ok("Fake PropertyListings created successfully");
     }
 
-    private String generateUniqueCode(Faker faker, Set<String> uniqueCodes) {
+    private String generateUniqueCode(
+            Faker faker,
+            Set<String> uniqueCodes
+    ) {
         String code;
         do {
             code = faker.code().asin();

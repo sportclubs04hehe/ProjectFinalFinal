@@ -1,9 +1,6 @@
 package GroupThree.bds.repository;
 
-import GroupThree.bds.entity.ListingStatus;
-import GroupThree.bds.entity.PropertyListings;
-import GroupThree.bds.entity.PropertyType;
-import GroupThree.bds.entity.User;
+import GroupThree.bds.entity.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -28,7 +25,8 @@ public interface PropertyListingsRepository extends JpaRepository<PropertyListin
             "AND (:minAreaSqm is null or p.areaSqm >= :minAreaSqm) " +
             "AND (:maxPrice is null or p.price <= :maxPrice) " +
             "AND (:minPrice is null or p.price >= :minPrice) " +
-            "AND (:propertyType is null or p.propertyType = :propertyType)")
+            "AND (:propertyType is null or p.propertyType = :propertyType)" +
+            "AND (:realEstateType is null or p.realEstateType = :realEstateType)")
     Page<PropertyListings> searchPropertyListings(
             @Param("province") String province,
             @Param("district") String district,
@@ -38,6 +36,7 @@ public interface PropertyListingsRepository extends JpaRepository<PropertyListin
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("minPrice") BigDecimal minPrice,
             @Param("propertyType") PropertyType propertyType,
+            @Param("realEstateType") RealEstateType realEstateType,
             Pageable pageable
     );
 

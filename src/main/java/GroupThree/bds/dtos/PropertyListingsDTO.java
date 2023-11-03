@@ -2,6 +2,7 @@ package GroupThree.bds.dtos;
 
 import GroupThree.bds.entity.ListingStatus;
 import GroupThree.bds.entity.PropertyType;
+import GroupThree.bds.entity.RealEstateType;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -48,6 +49,11 @@ public class PropertyListingsDTO {
     @NotNull( message = "Property Type is required")
     @Enumerated(EnumType.STRING)
     private PropertyType propertyType;
+
+    @JsonProperty("real_estate_type")
+    @NotNull( message = "Real Estate Type Type is required")
+    @Enumerated(EnumType.STRING)
+    private RealEstateType realEstateType;
 
     @Positive(message = "Price must be greater than 0")
     @NotNull( message = "Price is required")

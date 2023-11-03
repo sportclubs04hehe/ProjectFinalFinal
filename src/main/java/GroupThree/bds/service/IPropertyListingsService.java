@@ -31,6 +31,7 @@ public interface IPropertyListingsService {
             BigDecimal maxPrice,
             BigDecimal minPrice,
             PropertyType propertyType,
+            RealEstateType realEstateType,
             PageRequest pageRequest
     );
 
