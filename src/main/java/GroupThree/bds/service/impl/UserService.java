@@ -86,6 +86,7 @@ public class UserService implements IUserService {
                 throw new BadCredentialsException("Password not match");
             }
         }
+        //dkm sao mỗi máy chạy một khác à, à đm còn phải xác nhận quyền. conđĩ mẹ
         Optional<Role> optionalRole = roleRepository.findById(roleId);
         if(optionalRole.isEmpty() || !roleId.equals(existingUser.getRole().getId())) {
             throw new DataNotFoundException("Role not found");

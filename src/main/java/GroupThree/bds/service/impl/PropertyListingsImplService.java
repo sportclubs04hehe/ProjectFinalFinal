@@ -9,6 +9,7 @@ import GroupThree.bds.exceptions.InvalidParamException;
 import GroupThree.bds.repository.PropertyImageRepository;
 import GroupThree.bds.repository.PropertyListingsRepository;
 import GroupThree.bds.repository.UserRepository;
+import GroupThree.bds.response.CountsPropertiesResponse;
 import GroupThree.bds.service.IPropertyListingsService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -52,12 +53,14 @@ public class PropertyListingsImplService implements IPropertyListingsService {
                     .district(dto.getDistrict())
                     .commune(dto.getCommune())
                     .propertyType(dto.getPropertyType())
+                    .realEstateType(dto.getRealEstateType())
                     .price(dto.getPrice())
                     .areaSqm(dto.getAreaSqm())
                     .numberOfRooms(dto.getNumberOfRooms())
                     .numberOfBathrooms(dto.getNumberOfBathrooms())
                     .parking(dto.getParking())
                     .listingStatus(ListingStatus.PENDING)
+//                    .listingStatus(dto.getListingStatus())
                     .build();
 
             if (propertyListings.getCode() == null || propertyListings.getCode().isEmpty()) {
@@ -120,8 +123,8 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     }
 
     @Override
-    public List<PropertyListings> findByUserId(Long id) {
-        return repository.findByUserId(id);
+    public Page<PropertyListings> findByUserId(Long id,PageRequest pageRequest) {
+        return repository.findByUserId(id,pageRequest);
     }
 
     @Override
@@ -134,10 +137,11 @@ public class PropertyListingsImplService implements IPropertyListingsService {
             BigDecimal maxPrice,
             BigDecimal minPrice,
             PropertyType propertyType,
+            RealEstateType realEstateType,
             PageRequest pageRequest
     ) {
         return repository.searchPropertyListings(
-                province, district, commune, maxAreaSqm, minAreaSqm , maxPrice, minPrice, propertyType, pageRequest
+                province, district, commune, maxAreaSqm, minAreaSqm , maxPrice, minPrice, propertyType, realEstateType, pageRequest
         );
     }
 
@@ -198,25 +202,54 @@ public class PropertyListingsImplService implements IPropertyListingsService {
         return null;
     }
 
+
     @Override
-    public List<PropertyListings> findByPropertyTypeAndCommune(PropertyType propertyType, String commune) {
-        return null;
+    public List<PropertyListings> findByTitleContainsOrDescriptionContains(
+            String title,
+            String description
+    ) {
+        return repository.findByTitleContainsIgnoreCaseOrDescriptionContainsIgnoreCase(title,description);
     }
 
     @Override
-    public List<PropertyListings> findByTitleContainsOrDescriptionContains(String keyword) {
-        return null;
+    public List<PropertyListings> findByUserAndPropertyType(Long userId, PropertyType propertyType) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException("User with id= "+ userId + " not found", NOT_FOUND));
+        return repository.findByUserIdAndPropertyType(user.getId(),propertyType);
     }
 
     @Override
-    public List<PropertyListings> findByUserAndPropertyType(User user, PropertyType propertyType) {
-        return null;
+    public Long totalPropertyListingsByUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException("User with id= "+ userId + " not found", NOT_FOUND));
+        return repository.countPropertyListingsByUserId(user.getId());
     }
 
     @Override
-    public Long countByParkingTrue() {
-        return null;
+    public CountsPropertiesResponse countUserListingStatuses(ListingStatus status, Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException("User with id= "+ userId + " not found", NOT_FOUND));
+
+        if(status != null){
+            Long count = repository.countByListingStatusAndUserId(status,userId);
+            return new CountsPropertiesResponse(count);
+
+        }else {
+            Long totalCount = repository.countPropertyListingsByUserId(user.getId());
+            Long pendingCount = repository.countByListingStatusAndUserId(ListingStatus.PENDING,user.getId());
+            Long approvedCount = repository.countByListingStatusAndUserId(ListingStatus.APPROVED,user.getId());
+            Long cancelCount = repository.countByListingStatusAndUserId(ListingStatus.CANCEL, user.getId());
+            return CountsPropertiesResponse.builder()
+                    .pendingCount(pendingCount)
+                    .approvedCount(approvedCount)
+                    .cancelCount(cancelCount)
+                    .totalCount(totalCount)
+                    .count(null)
+                    .build();
+        }
     }
+
 
     @Override
     public List<PropertyListings> findTopNByOrderByPriceDesc(int topN) {

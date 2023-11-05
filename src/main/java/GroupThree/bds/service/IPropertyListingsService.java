@@ -4,6 +4,7 @@ import GroupThree.bds.dtos.PropertyImageDTO;
 import GroupThree.bds.dtos.PropertyListingsDTO;
 import GroupThree.bds.entity.*;
 import GroupThree.bds.exceptions.DataNotFoundException;
+import GroupThree.bds.response.CountsPropertiesResponse;
 import GroupThree.bds.response.PropertySearchResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,7 +20,7 @@ public interface IPropertyListingsService {
 
     boolean existByCode (String code);
 
-    List<PropertyListings> findByUserId(Long user);
+    Page<PropertyListings> findByUserId(Long user,PageRequest pageRequest);
 
     Page<PropertyListings> searchPropertyListings(
             String province,
@@ -30,6 +31,7 @@ public interface IPropertyListingsService {
             BigDecimal maxPrice,
             BigDecimal minPrice,
             PropertyType propertyType,
+            RealEstateType realEstateType,
             PageRequest pageRequest
     );
 
@@ -46,13 +48,13 @@ public interface IPropertyListingsService {
     // Search by User and Listing Status: Retrieve property listings created by a specific user and with a specific listing status.
     List<PropertyListings> findByUserAndListingStatus(User user, ListingStatus listingStatus);
 
-    List<PropertyListings> findByPropertyTypeAndCommune(PropertyType propertyType, String commune);
+    List<PropertyListings> findByTitleContainsOrDescriptionContains(String title,String description);
 
-    List<PropertyListings> findByTitleContainsOrDescriptionContains(String keyword);
+    List<PropertyListings> findByUserAndPropertyType(Long userId, PropertyType propertyType);
 
-    List<PropertyListings> findByUserAndPropertyType(User user, PropertyType propertyType);
+    Long totalPropertyListingsByUser(Long userId);
 
-    Long countByParkingTrue();
+    CountsPropertiesResponse countUserListingStatuses(ListingStatus status, Long userId);
 
     List<PropertyListings> findTopNByOrderByPriceDesc(int topN);
 

@@ -3,6 +3,7 @@ package GroupThree.bds.dtos;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
 import java.util.Date;
@@ -20,6 +21,7 @@ public class UserDTO {
 
     @JsonProperty("phone_number")
     @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "(84|0[3|5|7|8|9])+([0-9]{8})\\b", message = "Invalid Vietnam phone number format")
     private String phoneNumber;
 
     private String address;

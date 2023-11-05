@@ -1,9 +1,6 @@
 package GroupThree.bds.repository;
 
-import GroupThree.bds.entity.ListingStatus;
-import GroupThree.bds.entity.PropertyListings;
-import GroupThree.bds.entity.PropertyType;
-import GroupThree.bds.entity.User;
+import GroupThree.bds.entity.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Repository
@@ -27,7 +25,8 @@ public interface PropertyListingsRepository extends JpaRepository<PropertyListin
             "AND (:minAreaSqm is null or p.areaSqm >= :minAreaSqm) " +
             "AND (:maxPrice is null or p.price <= :maxPrice) " +
             "AND (:minPrice is null or p.price >= :minPrice) " +
-            "AND (:propertyType is null or p.propertyType = :propertyType)")
+            "AND (:propertyType is null or p.propertyType = :propertyType)" +
+            "AND (:realEstateType is null or p.realEstateType = :realEstateType)")
     Page<PropertyListings> searchPropertyListings(
             @Param("province") String province,
             @Param("district") String district,
@@ -37,12 +36,13 @@ public interface PropertyListingsRepository extends JpaRepository<PropertyListin
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("minPrice") BigDecimal minPrice,
             @Param("propertyType") PropertyType propertyType,
+            @Param("realEstateType") RealEstateType realEstateType,
             Pageable pageable
     );
 
     boolean existsByCode (String code);
 
-    List<PropertyListings> findByUserId (Long id);
+    Page<PropertyListings> findByUserId (Long id, PageRequest pageRequest);
 
     List<PropertyListings> findByPropertyType (PropertyType propertyType);
 
@@ -60,16 +60,20 @@ public interface PropertyListingsRepository extends JpaRepository<PropertyListin
     // Search by price, sorted from low to high
     List<PropertyListings> findByOrderByPriceAsc();
 
-    // Search by multiple criteria (example: ListingStatus and PropertyType)
-    List<PropertyListings> findByListingStatusAndPropertyType(ListingStatus listingStatus, PropertyType propertyType);
+    List<PropertyListings> findByTitleContainsIgnoreCaseOrDescriptionContainsIgnoreCase(
+            @Param("title") String title,
+            @Param("description") String description
+    );
+
+    List<PropertyListings> findByUserIdAndPropertyType(Long userId, PropertyType propertyType);
 
     // Define additional custom queries as needed
     @Query("SELECT p FROM PropertyListings p WHERE p.propertyType = :customValue")
     List<PropertyListings> findByCustomCriteria(@Param("customValue") String customValue);
 
-    @Query("SELECT COUNT(p) FROM PropertyListings p WHERE p.user.id = :userId")
-    Long countPropertyListingsByUser(@Param("userId") Long userId);
+    Long countPropertyListingsByUserId (Long userId);
 
+    Long countByListingStatusAndUserId(ListingStatus listingStatus, Long userId);
     @Query("SELECT COUNT(p) FROM PropertyListings p WHERE p.listingStatus = 'PENDING'")
     Long countWaitingForApprovalPropertyListings();
 

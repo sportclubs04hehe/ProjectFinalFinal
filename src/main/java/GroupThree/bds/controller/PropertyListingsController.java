@@ -2,11 +2,9 @@ package GroupThree.bds.controller;
 
 import GroupThree.bds.dtos.PropertyImageDTO;
 import GroupThree.bds.dtos.PropertyListingsDTO;
-import GroupThree.bds.entity.ListingStatus;
-import GroupThree.bds.entity.PropertyImage;
-import GroupThree.bds.entity.PropertyListings;
-import GroupThree.bds.entity.PropertyType;
+import GroupThree.bds.entity.*;
 import GroupThree.bds.exceptions.DataNotFoundException;
+import GroupThree.bds.response.CountsPropertiesResponse;
 import GroupThree.bds.response.PropertySearchResponse;
 import GroupThree.bds.service.IPropertyListingsService;
 import com.github.javafaker.Faker;
@@ -14,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,6 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
@@ -88,7 +88,9 @@ public class PropertyListingsController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProperty(@PathVariable long id) {
+    public ResponseEntity<?> deleteProperty(
+            @PathVariable long id
+    ) {
         try {
             service.deletePropertyListings(id);
             return ResponseEntity.ok(String.format("Product with id = %d deleted successfully", id));
@@ -97,11 +99,32 @@ public class PropertyListingsController {
         }
     }
 
-    @GetMapping("/user/{id}")
-    public ResponseEntity<?> getPropertyByUser(@PathVariable long id) {
+    @GetMapping("/user")
+    public ResponseEntity<?> getPropertyByUser(
+            @RequestParam(name = "userId") Long userId,
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size
+    ) {
         try {
-            List<PropertyListings> propertyListings = service.findByUserId(id);
-            return new ResponseEntity<>(propertyListings,OK);
+            if (page < 1) {
+                return new ResponseEntity<>("Invalid page number", BAD_REQUEST);
+            }
+
+            PageRequest pageRequest = PageRequest.of(
+                    page - 1, size, // => jpa đang là 1 trừ 1 = 0 đó là quy ước của jpa
+                    Sort.by("id").descending()
+            );
+
+            Page<PropertyListings> propertyListings = service.findByUserId(userId,pageRequest);
+
+            int totalPage = propertyListings.getTotalPages();
+            List<PropertyListings> propertyListingsPage = propertyListings.getContent();
+
+            return ResponseEntity.ok(PropertySearchResponse.builder()
+                    .propertyListings(propertyListingsPage)
+                    .totalPage(totalPage)
+                    .build());
+
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -118,6 +141,7 @@ public class PropertyListingsController {
             @RequestParam(name = "maxPrice", required = false) BigDecimal maxPrice,
             @RequestParam(name = "minPrice", required = false) BigDecimal minPrice,
             @RequestParam(name = "propertyType", required = false) PropertyType propertyType,
+            @RequestParam(name = "realEstateType", required = false) RealEstateType realEstateType,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "size", defaultValue = "10") int size
     ) {
@@ -133,7 +157,7 @@ public class PropertyListingsController {
            );
 
            Page<PropertyListings> propertyListings = service.searchPropertyListings(
-                   province, district, commune, maxAreaSqm,minAreaSqm , maxPrice, minPrice, propertyType ,pageRequest
+                   province, district, commune, maxAreaSqm,minAreaSqm , maxPrice, minPrice, propertyType ,realEstateType ,pageRequest
            );
 
            int totalPage = propertyListings.getTotalPages();
@@ -151,15 +175,97 @@ public class PropertyListingsController {
 
     }
 
-    @GetMapping("/code/{code}")
-    public ResponseEntity<?> getByCode(@PathVariable String code){
+    @GetMapping("/search")
+    public ResponseEntity<?> searchPropertyListings(
+            @RequestParam(value = "title",required = false) String title,
+            @RequestParam(value = "description",required = false) String description
+    ) {
         try{
-            PropertyListings propertyListings = service.getByCode(code);
-            if(propertyListings != null){
-                return ResponseEntity.ok().body(propertyListings);
-            }else {
+            List<PropertyListings> results = service.findByTitleContainsOrDescriptionContains(title,description);
+
+            if(results.isEmpty()){
                 return ResponseEntity.notFound().build();
             }
+
+            return ResponseEntity.ok(results);
+
+        }catch (Exception e){
+            return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    @GetMapping("/search/user-property-type")
+    public ResponseEntity<?> searchUserAndPropertyType(
+            @RequestParam(value = "userId") Long userId,
+            @RequestParam(value = "propertyType") PropertyType propertyType
+    ) {
+        try{
+            List<PropertyListings> results = service.findByUserAndPropertyType(userId,propertyType);
+
+            if (results.isEmpty()){
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok(results);
+
+        }catch (Exception e){
+            return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    @GetMapping("/property-count")
+    public ResponseEntity<?> getPropertyListingCounts(
+            @RequestParam(value = "userId") Long userId
+    ) {
+        try{
+            Long results = service.totalPropertyListingsByUser(userId);
+
+            if (results <= 0){
+                return new ResponseEntity<>("No record exists, record = 0", NOT_FOUND);
+            }
+
+            return ResponseEntity.ok(String.format("Total PropertyListing= " + results + " with id=" + userId));
+
+        }catch (Exception e){
+            return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+    @GetMapping("/status-count-properties")
+    public ResponseEntity<?> getPropertyListingCountsStatus(
+            @RequestParam(value = "userId") Long userId,
+            @RequestParam(value = "status", required = false) ListingStatus status
+    ) {
+        try{
+            CountsPropertiesResponse results = service.countUserListingStatuses(status,userId);
+            if (status == null){
+                return ResponseEntity.ok(results);
+            }
+
+            return ResponseEntity.ok().body(String.format("Listing Status= " + status + " have " + results.getCount() + " record."));
+
+        }catch (Exception e){
+            return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
+        }
+
+    }
+
+
+    @GetMapping("/code/{code}")
+    public ResponseEntity<?> getByCode(
+            @PathVariable String code
+    ){
+        try{
+            PropertyListings propertyListings = service.getByCode(code);
+
+            if(propertyListings.getCode().isEmpty()){
+                return ResponseEntity.notFound().build();
+            }
+
+            return ResponseEntity.ok().body(propertyListings);
         }catch (Exception e){
             return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
         }
@@ -200,6 +306,8 @@ public class PropertyListingsController {
             return new ResponseEntity<>( e.getMessage(),INTERNAL_SERVER_ERROR);
         }
     }
+
+
 
 
     @PostMapping(value = "/uploads/{id}",
@@ -246,6 +354,28 @@ public class PropertyListingsController {
         }
     }
 
+
+    @GetMapping("/images/{imageName}")
+    public ResponseEntity<?> viewImage(@PathVariable String imageName) {
+        try {
+            Path imagePath = Paths.get("uploads/"+imageName);
+            UrlResource resource = new UrlResource(imagePath.toUri());
+
+            if (resource.exists()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_JPEG)
+                        .body(resource);
+            } else {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_JPEG)
+                        .body(new UrlResource(Paths.get("uploads/notfound.jpg").toUri()));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
     private String storeFile(MultipartFile file) throws IOException {
         if (!isImageFile(file) || file.getOriginalFilename() == null) {
             throw new IOException("Invalid image format");
@@ -271,7 +401,7 @@ public class PropertyListingsController {
         return contentType != null && contentType.startsWith("image/");
     }
 
-    /** When need fake data is use*/
+    /** When need fake data is use, not delete*/
     @PostMapping("/generateFakePropertyListings")
     public ResponseEntity<String> generateFakePropertyListings() {
         Faker faker = new Faker();
@@ -293,10 +423,11 @@ public class PropertyListingsController {
                     .propertyType(PropertyType.values()[RandomUtils.nextInt(0, PropertyType.values().length)])
                     .price(BigDecimal.valueOf(faker.number().randomDouble(2, 100, 1000000)))
                     .areaSqm(faker.number().randomDouble(2, 10, 1000))
-                    .numberOfRooms(faker.number().numberBetween(1, 10))
+                    .numberOfRooms(faker.number().numberBetween(1,10))
                     .numberOfBathrooms(faker.number().numberBetween(1, 5))
                     .parking(faker.bool().bool())
                     .listingStatus(ListingStatus.values()[RandomUtils.nextInt(0, ListingStatus.values().length)])
+                    .realEstateType(RealEstateType.values()[RandomUtils.nextInt(0, RealEstateType.values().length)])
                     .user((long) faker.number().numberBetween(1,4)) // Assuming you have a method to get a random user
                     .build();
 
@@ -309,7 +440,10 @@ public class PropertyListingsController {
         return ResponseEntity.ok("Fake PropertyListings created successfully");
     }
 
-    private String generateUniqueCode(Faker faker, Set<String> uniqueCodes) {
+    private String generateUniqueCode(
+            Faker faker,
+            Set<String> uniqueCodes
+    ) {
         String code;
         do {
             code = faker.code().asin();

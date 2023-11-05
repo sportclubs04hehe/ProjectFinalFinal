@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class PropertyListings {
+public class PropertyListings extends BaseEntity{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -55,6 +55,10 @@ public class PropertyListings {
     @Column(name = "listing_status")
     private ListingStatus listingStatus;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "real_estate_type")
+    private RealEstateType realEstateType;
+
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     @JsonBackReference
@@ -62,5 +66,9 @@ public class PropertyListings {
 
     @OneToMany(mappedBy = "listings", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PropertyImage> productImages;
+
+    @ManyToOne
+    @JoinColumn(name = "project_id", referencedColumnName = "id")
+    private Projects projects;
 
 }
