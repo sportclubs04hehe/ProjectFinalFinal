@@ -6,21 +6,24 @@ import GroupThree.bds.repository.RoleRepository;
 import GroupThree.bds.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
-public class DataInitializationService implements CommandLineRunner {
+public class DataInitializationService implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final PasswordEncoder encoder;
 
     @Override
-    @Transactional
-    public void run(String... args) throws Exception {
+    public void run(ApplicationArguments args) throws Exception {
         initializeRoles();
         initializeAdminUser();
     }
@@ -42,18 +45,19 @@ public class DataInitializationService implements CommandLineRunner {
             Role adminRole = roleRepository.findByName("ADMIN");
 
             if (adminRole != null) {
-                User adminUser = new User();
-                adminUser.setFullName("Group3Admin");
-                adminUser.setPhoneNumber("0966887766");
-                adminUser.setPassword("12345");
-                adminUser.setAddress("Ha Noi");
-                adminUser.setFacebookAccountId(0);
-                adminUser.setGoogleAccountId(0);
-                adminUser.setActive(true);
-                adminUser.setRole(adminRole);
-                // Set other user attributes
+                String encodePassword = encoder.encode("12345");
+                User user = User.builder()
+                        .fullName("Admin")
+                        .phoneNumber("0966887766")
+                        .password(encodePassword)
+                        .address("Hai Phong")
+                        .facebookAccountId(0)
+                        .googleAccountId(0)
+                        .active(true)
+                        .role(adminRole)
+                        .build();
 
-                userRepository.save(adminUser);
+                userRepository.save(user);
             }
         }
     }
