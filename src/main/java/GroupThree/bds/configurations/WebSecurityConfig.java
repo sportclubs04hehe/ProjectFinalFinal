@@ -61,6 +61,9 @@ public class WebSecurityConfig {
                             .requestMatchers(GET,
                                     String.format("%s/properties**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
 
+                            .requestMatchers(POST,
+                                    String.format("%s/projects/**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
+
                             .anyRequest().authenticated();
                     //.anyRequest().permitAll();
 
