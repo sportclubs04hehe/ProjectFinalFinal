@@ -44,7 +44,6 @@ public class PropertyListingsDTO {
     @Size(max = 100, message = "Commune not too 100 character")
     private String commune;
 
-
     @JsonProperty("property_type")
     @NotNull( message = "Property Type is required")
     @Enumerated(EnumType.STRING)

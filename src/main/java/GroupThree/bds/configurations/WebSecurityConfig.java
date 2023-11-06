@@ -61,11 +61,17 @@ public class WebSecurityConfig {
                             .requestMatchers(GET,
                                     String.format("%s/properties**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
 
+                            .requestMatchers(POST,
+                                    String.format("%s/projects/**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
+
                             .anyRequest().authenticated();
                     //.anyRequest().permitAll();
 
                 })
                 .csrf(AbstractHttpConfigurer::disable);
+
+        // Xong lúc nào ông nhận api thì ghép khớp đường dẫn là được, vì ở đây tôi cấu hình
+        // full quyền rồi
         http.cors(new Customizer<CorsConfigurer<HttpSecurity>>() {
             @Override
             public void customize(CorsConfigurer<HttpSecurity> httpSecurityCorsConfigurer) {

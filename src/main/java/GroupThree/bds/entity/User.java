@@ -60,6 +60,9 @@ public class User implements UserDetails {
     @JsonManagedReference
     private List<PropertyListings> propertyListings;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Projects> projects;
+
     @Column(name = "create_at")
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createAt;
