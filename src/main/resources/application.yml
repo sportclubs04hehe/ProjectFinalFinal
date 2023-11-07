@@ -27,3 +27,8 @@ application:
         expiration: 604800000 # 7 days
 api:
   prefix: api/v1
+logging:
+  level:
+    org:
+      springframework:
+        security: debug

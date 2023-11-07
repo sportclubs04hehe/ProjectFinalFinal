@@ -69,6 +69,7 @@ public class PropertyListings extends BaseEntity{
 
     @ManyToOne
     @JoinColumn(name = "project_id", referencedColumnName = "id")
+    @JsonBackReference
     private Projects projects;
 
 }

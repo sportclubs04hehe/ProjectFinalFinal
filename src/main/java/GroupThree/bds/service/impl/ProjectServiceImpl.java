@@ -9,6 +9,7 @@ import GroupThree.bds.exceptions.AppException;
 import GroupThree.bds.repository.ProjectRepository;
 import GroupThree.bds.repository.PropertyListingsRepository;
 import GroupThree.bds.service.IProjectService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -20,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -33,6 +35,7 @@ public class ProjectServiceImpl implements IProjectService {
 
 
     @Override
+    @Transactional
     public Projects insertNewProject(ProjectDTO dto) {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -51,27 +54,8 @@ public class ProjectServiceImpl implements IProjectService {
                     .user(user)
                     .build();
 
-            if(dto.getPropertyListings() != null){
-                List<PropertyListings> propertyListings = new ArrayList<>();
-                for(PropertyListingsDTO propertyListingsDTO : dto.getPropertyListings()){
-                    PropertyListings existingProperty = listingsRepository.findById(propertyListingsDTO.getId())
-                            .orElseThrow(() -> new AppException(
-                                    "Property with id= " + dto.getPropertyListings() + " not found", NOT_FOUND
-                            ));
-                    if(existingProperty != null){
-                        propertyListings.add(existingProperty);
-                    }else {
-                        PropertyListings newPropertyListings = new PropertyListings();
-                        modelMapper.map(propertyListingsDTO, newPropertyListings);
-                        propertyListings.add(newPropertyListings);
-                    }
-
-                }
-                projects.setPropertyListings(propertyListings);
-            }
-
             return repository.save(projects);
         }
-        return null;
+        throw new AppException("Null", BAD_REQUEST);
     }
 }
