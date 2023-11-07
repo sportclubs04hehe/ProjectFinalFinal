@@ -1,27 +1,23 @@
 package GroupThree.bds.service.impl;
 
+import GroupThree.bds.configurations.AuthenticationFacade;
 import GroupThree.bds.dtos.ProjectDTO;
-import GroupThree.bds.dtos.PropertyListingsDTO;
 import GroupThree.bds.entity.Projects;
-import GroupThree.bds.entity.PropertyListings;
 import GroupThree.bds.entity.User;
 import GroupThree.bds.exceptions.AppException;
 import GroupThree.bds.repository.ProjectRepository;
-import GroupThree.bds.repository.PropertyListingsRepository;
 import GroupThree.bds.service.IProjectService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.springframework.security.core.Authentication;
+import org.modelmapper.TypeMap;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import static org.springframework.http.HttpStatus.*;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor
@@ -29,54 +25,46 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class ProjectServiceImpl implements IProjectService {
 
     private final ProjectRepository repository;
-    private final PropertyListingsRepository listingsRepository;
+    private final UserService userService;
     private final ModelMapper modelMapper;
-
+    private final AuthenticationFacade authenticationFacade;
 
     @Override
+    @Transactional
     public Projects insertNewProject(ProjectDTO dto) {
+        Projects projects = modelMapper.map(dto,Projects.class);
 
-       try {
-           Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentPhoneNumberUser = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userService.findByPhoneNumber(currentPhoneNumberUser);
 
-           if (authentication != null) {
-               User user = (User) authentication.getPrincipal();
+        projects.setUser(currentUser);
 
-               Projects projects = Projects.builder()
-                       .projectName(dto.getProjectName())
-                       .developerName(dto.getDeveloperName())
-                       .launchDate(dto.getLaunchDate())
-                       .expectedCompletion(dto.getExpectedCompletion())
-                       .amenities(dto.getAmenities())
-                       .location(dto.getLocation())
-                       .projectStatus(dto.getProjectStatus())
-                       .user(user)
-                       .build();
+        return repository.save(projects);
+    }
 
-               if(dto.getPropertyListings() != null){
-                   List<PropertyListings> propertyListings = new ArrayList<>();
-                   for(PropertyListingsDTO propertyListingsDTO : dto.getPropertyListings()){
-                       PropertyListings existingProperty = listingsRepository.findById(propertyListingsDTO.getId())
-                               .orElseThrow(() -> new AppException(
-                                       "Property with id= " + dto.getPropertyListings() + " not found", NOT_FOUND
-                               ));
-                       if(existingProperty != null){
-                           propertyListings.add(existingProperty);
-                       }else {
-                           PropertyListings newPropertyListings = new PropertyListings();
-                           modelMapper.map(propertyListingsDTO, newPropertyListings);
-                           propertyListings.add(newPropertyListings);
-                       }
+    @Override
+    public Projects updateProject(ProjectDTO dto, Long id) {
+        Projects existingProject  = repository.findById(id)
+                .orElseThrow(() -> new AppException("Project with id= "+ id + " not found", NOT_FOUND));
 
-                   }
-                   projects.setPropertyListings(propertyListings);
-               }
+        User currentUser = authenticationFacade.getCurrentUser();
 
-               return repository.save(projects);
-           }
-       }catch (Exception e){
-           throw new AppException(e.getMessage(),BAD_REQUEST);
-       }
-        return null;
+        if (!existingProject.getUser().getId().equals(currentUser.getId())) {
+            throw new AppException("User does not have permission to update this project", UNAUTHORIZED);
+        }
+
+        if (!existingProject.getProjectName().equals(dto.getProjectName())) {
+            throw new AppException("Project name cannot be changed",BAD_REQUEST);
+        }
+
+        existingProject.setProjectName(dto.getProjectName());
+        existingProject.setDeveloperName(dto.getDeveloperName());
+        existingProject.setLaunchDate(dto.getLaunchDate());
+        existingProject.setExpectedCompletion(dto.getExpectedCompletion());
+        existingProject.setAmenities(dto.getAmenities());
+        existingProject.setLocation(dto.getLocation());
+        existingProject.setProjectStatus(dto.getProjectStatus());
+
+        return repository.save(existingProject);
     }
 }

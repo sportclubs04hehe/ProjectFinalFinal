@@ -1,17 +1,12 @@
 package GroupThree.bds.dtos;
 
 import GroupThree.bds.entity.ProjectStatus;
-import GroupThree.bds.entity.PropertyListings;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 
@@ -20,42 +15,37 @@ import java.util.List;
 public class ProjectDTO {
 
     @NotBlank(message = "Project Name is required")
-    @Size(min = 10, max = 200, message = "Project Name must be between 10 and 200 characters")
+    @Size(max = 200, message = "Project Name must be less than 200 characters")
     @JsonProperty("project_name")
     private String projectName; // ten
 
     @NotBlank(message = "Developer Name is required")
-    @Size(min = 10, max = 100, message = "Developer Name must be between 10 and 100 characters")
+    @Size(max = 100, message = "Developer Name must be less than 100 characters")
     @JsonProperty("developer_name")
     private String developerName; // chu dau tu
 
     @JsonProperty("launch_date")
-    @NotBlank(message = "Launch Date Name is required")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private Date launchDate; // ngay ra mat
+    @FutureOrPresent(message = "Launch date must not be in the past.")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    private LocalDate launchDate; // ngay ra mat
 
     @JsonProperty("expected_completion")
-    @NotBlank(message = "Expected Completion is required")
     @Future(message = "The expected completion date must be in the future.")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private Date expectedCompletion; // ky vong hoan thanh
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    private LocalDate expectedCompletion; // ky vong hoan thanh
 
-    @Size(min = 10, max = 200, message = "Location must be between 10 and 200 characters")
+    @NotEmpty(message = "Amenities cannot be empty")
     @JsonProperty("amenities")
-    private String amenities; // tien nghi
+    private List<String> amenities; // tien nghi
 
-    @NotBlank(message = "Location is required")
-    @Size(min = 10, max = 500, message = "Location must be between 10 and 500 characters")
+    @NotEmpty(message = "Location cannot be empty")
+    @Size(max = 500, message = "Location must be less than 500 characters")
     @JsonProperty("location")
     private String location;
 
-    @Enumerated(EnumType.STRING)
-    @JsonProperty("project_status")
     @NotNull(message = "Project Status is required")
+    @JsonProperty("project_status")
     private ProjectStatus projectStatus;
-
-    @JsonProperty("property_listings")
-    private List<PropertyListingsDTO> propertyListings;
 
     @JsonProperty("user_id")
     private Long userId;

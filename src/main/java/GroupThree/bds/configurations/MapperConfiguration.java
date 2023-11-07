@@ -16,12 +16,5 @@ public class MapperConfiguration {
         return new ModelMapper();
     }
 
-    @Bean
-    public ObjectMapper objectMapper(){
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd"));
-        return mapper;
-    }
+
 }

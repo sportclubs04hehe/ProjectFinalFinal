@@ -1,14 +1,20 @@
 package GroupThree.bds.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
-@Table(name = "_project")
+@Table(name = "_project", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"project_name","developer_name"})
+})
 @Getter
 @Setter
 @AllArgsConstructor
@@ -27,15 +33,22 @@ public class Projects extends BaseEntity{
     private String developerName; // chu dau tu
 
     @Column(name = "launch_date")
-    private Date launchDate; // ngay ra mat
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    @DateTimeFormat(pattern = "dd/MM/yyyy")
+    private LocalDate launchDate; // ngay ra mat
 
+    @Future(message = "Expected completion date must be in the future")
     @Column(name = "expected_completion")
-    private Date expectedCompletion; // ky vong hoan thanh
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
+    @DateTimeFormat(pattern = "dd/MM/yyyy")
+    private LocalDate expectedCompletion; // ky vong hoan thanh
 
+    @ElementCollection
+    @CollectionTable(name = "project_amenities", joinColumns = @JoinColumn(name = "project_id"))
     @Column(name = "amenities")
-    private String amenities; // tien nghi
+    private List<String> amenities; // tien nghi
 
-    @Column(length = 500, name = "location")
+    @Column(length = 500, name = "location",nullable = false)
     private String location;
 
     @Enumerated(EnumType.STRING)
@@ -47,6 +60,7 @@ public class Projects extends BaseEntity{
 
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JsonBackReference
     private User user;
 
 }

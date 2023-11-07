@@ -5,6 +5,7 @@ import GroupThree.bds.dtos.UpdateUserDTO;
 import GroupThree.bds.dtos.UserDTO;
 import GroupThree.bds.entity.Role;
 import GroupThree.bds.entity.User;
+import GroupThree.bds.exceptions.AppException;
 import GroupThree.bds.exceptions.DataNotFoundException;
 import GroupThree.bds.exceptions.PermissionDenyException;
 import GroupThree.bds.repository.RoleRepository;
@@ -13,6 +14,7 @@ import GroupThree.bds.service.IUserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -170,4 +172,11 @@ public class UserService implements IUserService {
         }
         return userRepository.save(existingUser);
     }
+
+    @Override
+    public User findByPhoneNumber(String phone) {
+        return userRepository.findByPhoneNumber(phone)
+                .orElseThrow(() -> new AppException("Phone number=" + phone +" not found", HttpStatus.NOT_FOUND));
+    }
+
 }

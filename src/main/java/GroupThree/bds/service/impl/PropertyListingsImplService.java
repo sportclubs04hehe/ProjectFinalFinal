@@ -66,7 +66,7 @@ public class PropertyListingsImplService implements IPropertyListingsService {
                     .build();
 
             Projects existingProject = projectRepository.findById(dto.getProjects())
-                    .orElseThrow(() -> new AppException("Project not found",NOT_FOUND));
+                    .orElse(null);
 
             propertyListings.setProjects(existingProject);
 

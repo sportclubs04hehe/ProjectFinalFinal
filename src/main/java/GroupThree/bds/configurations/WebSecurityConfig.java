@@ -37,6 +37,7 @@ public class WebSecurityConfig {
     //Pair.of(String.format("%s/products", apiPrefix), "GET"),
     public SecurityFilterChain securityFilterChain(HttpSecurity http)  throws Exception{
         http
+                .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(requests -> {
                     requests
@@ -63,6 +64,13 @@ public class WebSecurityConfig {
 
                             .requestMatchers(POST,
                                     String.format("%s/projects/**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
+
+                            .requestMatchers(GET,
+                                    String.format("%s/projects/**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
+
+                            .requestMatchers(PUT,
+                                    String.format("%s/projects/**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
+
 
                             .anyRequest().authenticated();
                     //.anyRequest().permitAll();

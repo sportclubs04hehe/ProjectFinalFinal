@@ -9,4 +9,6 @@ public interface IUserService {
     String login(String phoneNumber, String password, Long roleId) throws Exception;
     User getUserDetailsFromToken(String token) throws Exception;
     User updateUser(Long userId, UpdateUserDTO updatedUserDTO) throws Exception;
+
+    User findByPhoneNumber (String phone);
 }
