@@ -25,7 +25,6 @@ public class ProjectDTO {
     private String developerName; // chu dau tu
 
     @JsonProperty("launch_date")
-    @FutureOrPresent(message = "Launch date must not be in the past.")
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate launchDate; // ngay ra mat
 

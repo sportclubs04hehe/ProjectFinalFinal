@@ -429,6 +429,7 @@ public class PropertyListingsController {
                     .listingStatus(ListingStatus.values()[RandomUtils.nextInt(0, ListingStatus.values().length)])
                     .realEstateType(RealEstateType.values()[RandomUtils.nextInt(0, RealEstateType.values().length)])
                     .user((long) faker.number().numberBetween(1,4)) // Assuming you have a method to get a random user
+                    .projects((long) faker.number().numberBetween(1,10))
                     .build();
 
             try {

@@ -2,6 +2,7 @@ package GroupThree.bds.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
@@ -13,7 +14,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "_project", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"project_name","developer_name"})
+        @UniqueConstraint(columnNames = {"project_name"})
 })
 @Getter
 @Setter
@@ -56,6 +57,7 @@ public class Projects extends BaseEntity{
     private ProjectStatus projectStatus;
 
     @OneToMany(mappedBy = "projects", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<PropertyListings> propertyListings;
 
     @ManyToOne

@@ -30,12 +30,13 @@ public class DataInitializationService implements ApplicationRunner {
         if (roleRepository.findByName("ADMIN") == null) {
             roleRepository.save(new Role("ADMIN"));
         }
-        if (roleRepository.findByName("EDITOR") == null) {
-            roleRepository.save(new Role("EDITOR"));
-        }
         if (roleRepository.findByName("USER") == null) {
             roleRepository.save(new Role("USER"));
         }
+        if (roleRepository.findByName("EDITOR") == null) {
+            roleRepository.save(new Role("EDITOR"));
+        }
+
     }
 
     private void initializeAdminUser() {

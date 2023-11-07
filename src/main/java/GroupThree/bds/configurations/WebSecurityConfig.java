@@ -71,6 +71,9 @@ public class WebSecurityConfig {
                             .requestMatchers(PUT,
                                     String.format("%s/projects/**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
 
+                            .requestMatchers(DELETE,
+                                    String.format("%s/projects/**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
+
 
                             .anyRequest().authenticated();
                     //.anyRequest().permitAll();

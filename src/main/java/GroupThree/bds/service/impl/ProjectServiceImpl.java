@@ -6,13 +6,13 @@ import GroupThree.bds.entity.Projects;
 import GroupThree.bds.entity.User;
 import GroupThree.bds.exceptions.AppException;
 import GroupThree.bds.repository.ProjectRepository;
+import GroupThree.bds.repository.UserRepository;
 import GroupThree.bds.service.IProjectService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
-import org.modelmapper.TypeMap;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +26,7 @@ public class ProjectServiceImpl implements IProjectService {
 
     private final ProjectRepository repository;
     private final UserService userService;
+    private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final AuthenticationFacade authenticationFacade;
 
@@ -38,8 +39,19 @@ public class ProjectServiceImpl implements IProjectService {
         User currentUser = userService.findByPhoneNumber(currentPhoneNumberUser);
 
         projects.setUser(currentUser);
-
         return repository.save(projects);
+
+//        if (dto.getUserId() == null) {
+//            throw new IllegalArgumentException("User ID is null");
+//        }
+//
+//        User user = userRepository.findById(dto.getUserId())
+//                .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + dto.getUserId()));
+//
+//        Projects project = modelMapper.map(dto, Projects.class);
+//        project.setUser(user); // Assign the found user to the project
+//
+//        return repository.save(project);
     }
 
     @Override
@@ -67,4 +79,20 @@ public class ProjectServiceImpl implements IProjectService {
 
         return repository.save(existingProject);
     }
+
+    @Override
+    public void deleteProject(Long id) {
+        Projects existingProject  = repository.findById(id)
+                .orElseThrow(() -> new AppException("Project with id= "+ id + " not found", NOT_FOUND));
+
+        User currentUser = authenticationFacade.getCurrentUser();
+
+
+        if (!existingProject.getUser().getId().equals(currentUser.getId())) {
+            throw new AppException("User does not have permission to update this project", UNAUTHORIZED);
+        }
+
+        repository.delete(existingProject);
+    }
+
 }

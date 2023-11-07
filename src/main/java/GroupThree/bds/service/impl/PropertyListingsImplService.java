@@ -12,6 +12,7 @@ import GroupThree.bds.repository.PropertyListingsRepository;
 import GroupThree.bds.repository.UserRepository;
 import GroupThree.bds.response.CountsPropertiesResponse;
 import GroupThree.bds.service.IPropertyListingsService;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -42,7 +43,7 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     public PropertyListings createPropertyListings(PropertyListingsDTO dto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication != null){
+        if (authentication != null) {
             User user = (User) authentication.getPrincipal();
 
 //        Long userId = dto.getUser();
@@ -65,10 +66,11 @@ public class PropertyListingsImplService implements IPropertyListingsService {
 //                    .listingStatus(dto.getListingStatus())
                     .build();
 
-            Projects existingProject = projectRepository.findById(dto.getProjects())
-                    .orElse(null);
-
-            propertyListings.setProjects(existingProject);
+            if (dto.getProjects() != null) {
+                Projects existingProject = projectRepository.findById(dto.getProjects())
+                        .orElseThrow(() -> new EntityNotFoundException("Project not found with id: " + dto.getProjects()));
+                propertyListings.setProjects(existingProject);
+            }
 
             if (propertyListings.getCode() == null || propertyListings.getCode().isEmpty()) {
                 propertyListings.setCode(generateUniqueCode());
@@ -95,7 +97,7 @@ public class PropertyListingsImplService implements IPropertyListingsService {
             PropertyListingsDTO dto
     ) {
         PropertyListings existingProperty = repository.findById(id)
-                .orElseThrow(() -> new AppException("Property with id= "+ id + " not found", NOT_FOUND));
+                .orElseThrow(() -> new AppException("Property with id= " + id + " not found", NOT_FOUND));
 
 
         dto.setUser(existingProperty.getUser().getId());
@@ -121,7 +123,7 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     @Transactional
     public void deletePropertyListings(Long id) {
         PropertyListings existingProperty = repository.findById(id)
-                .orElseThrow(() -> new AppException("Property with id= "+ id + " not found", NOT_FOUND));
+                .orElseThrow(() -> new AppException("Property with id= " + id + " not found", NOT_FOUND));
         repository.delete(existingProperty);
     }
 
@@ -131,8 +133,8 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     }
 
     @Override
-    public Page<PropertyListings> findByUserId(Long id,PageRequest pageRequest) {
-        return repository.findByUserId(id,pageRequest);
+    public Page<PropertyListings> findByUserId(Long id, PageRequest pageRequest) {
+        return repository.findByUserId(id, pageRequest);
     }
 
     @Override
@@ -149,14 +151,14 @@ public class PropertyListingsImplService implements IPropertyListingsService {
             PageRequest pageRequest
     ) {
         return repository.searchPropertyListings(
-                province, district, commune, maxAreaSqm, minAreaSqm , maxPrice, minPrice, propertyType, realEstateType, pageRequest
+                province, district, commune, maxAreaSqm, minAreaSqm, maxPrice, minPrice, propertyType, realEstateType, pageRequest
         );
     }
 
     @Override
-    public PropertyListings getByCode(String code){
-        if(!existByCode(code)){
-           throw new AppException("Code =" + code +" not found",NOT_FOUND);
+    public PropertyListings getByCode(String code) {
+        if (!existByCode(code)) {
+            throw new AppException("Code =" + code + " not found", NOT_FOUND);
         }
         return repository.findByCode(code);
     }
@@ -166,8 +168,8 @@ public class PropertyListingsImplService implements IPropertyListingsService {
             ListingStatus listingStatuses,
             PageRequest pageRequest
     ) {
-        Page<PropertyListings> propertyListings = repository.findByListingStatus(listingStatuses,pageRequest);
-        if(propertyListings.isEmpty()){
+        Page<PropertyListings> propertyListings = repository.findByListingStatus(listingStatuses, pageRequest);
+        if (propertyListings.isEmpty()) {
             throw new AppException("No property listings found with the given listing statuses.", NOT_FOUND);
         }
         return propertyListings;
@@ -176,7 +178,7 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     @Override
     public PropertyListings getPropertyById(Long id) throws DataNotFoundException {
         Optional<PropertyListings> propertyListings = repository.getDetailProperty(id);
-        if(propertyListings.isPresent()){
+        if (propertyListings.isPresent()) {
             return propertyListings.get();
         }
         throw new DataNotFoundException("Cannot find product with id =" + id);
@@ -188,7 +190,7 @@ public class PropertyListingsImplService implements IPropertyListingsService {
             PropertyImageDTO dto
     ) throws Exception {
         PropertyListings existingProperty = repository.findById(propertyId)
-                .orElseThrow(() -> new AppException("Property with id= "+ propertyId + " not found", NOT_FOUND));
+                .orElseThrow(() -> new AppException("Property with id= " + propertyId + " not found", NOT_FOUND));
 
         PropertyImage newPropertyImage = PropertyImage.builder()
                 .listings(existingProperty)
@@ -197,10 +199,10 @@ public class PropertyListingsImplService implements IPropertyListingsService {
 
         //Ko cho insert quá 5 ảnh cho 1 sản phẩm
         int size = imageRepository.findByListingsId(propertyId).size();
-        if(size >= PropertyImage.MAXIMUM_IMAGES_PER_PROPERTY){
+        if (size >= PropertyImage.MAXIMUM_IMAGES_PER_PROPERTY) {
             throw new InvalidParamException(
                     "Number of images must be <= "
-                            +PropertyImage.MAXIMUM_IMAGES_PER_PROPERTY);
+                            + PropertyImage.MAXIMUM_IMAGES_PER_PROPERTY);
         }
         return imageRepository.save(newPropertyImage);
     }
@@ -216,20 +218,20 @@ public class PropertyListingsImplService implements IPropertyListingsService {
             String title,
             String description
     ) {
-        return repository.findByTitleContainsIgnoreCaseOrDescriptionContainsIgnoreCase(title,description);
+        return repository.findByTitleContainsIgnoreCaseOrDescriptionContainsIgnoreCase(title, description);
     }
 
     @Override
     public List<PropertyListings> findByUserAndPropertyType(Long userId, PropertyType propertyType) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("User with id= "+ userId + " not found", NOT_FOUND));
-        return repository.findByUserIdAndPropertyType(user.getId(),propertyType);
+                .orElseThrow(() -> new AppException("User with id= " + userId + " not found", NOT_FOUND));
+        return repository.findByUserIdAndPropertyType(user.getId(), propertyType);
     }
 
     @Override
     public Long totalPropertyListingsByUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("User with id= "+ userId + " not found", NOT_FOUND));
+                .orElseThrow(() -> new AppException("User with id= " + userId + " not found", NOT_FOUND));
         return repository.countPropertyListingsByUserId(user.getId());
     }
 
@@ -237,16 +239,16 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     public CountsPropertiesResponse countUserListingStatuses(ListingStatus status, Long userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new AppException("User with id= "+ userId + " not found", NOT_FOUND));
+                .orElseThrow(() -> new AppException("User with id= " + userId + " not found", NOT_FOUND));
 
-        if(status != null){
-            Long count = repository.countByListingStatusAndUserId(status,userId);
+        if (status != null) {
+            Long count = repository.countByListingStatusAndUserId(status, userId);
             return new CountsPropertiesResponse(count);
 
-        }else {
+        } else {
             Long totalCount = repository.countPropertyListingsByUserId(user.getId());
-            Long pendingCount = repository.countByListingStatusAndUserId(ListingStatus.PENDING,user.getId());
-            Long approvedCount = repository.countByListingStatusAndUserId(ListingStatus.APPROVED,user.getId());
+            Long pendingCount = repository.countByListingStatusAndUserId(ListingStatus.PENDING, user.getId());
+            Long approvedCount = repository.countByListingStatusAndUserId(ListingStatus.APPROVED, user.getId());
             Long cancelCount = repository.countByListingStatusAndUserId(ListingStatus.CANCEL, user.getId());
             return CountsPropertiesResponse.builder()
                     .pendingCount(pendingCount)
