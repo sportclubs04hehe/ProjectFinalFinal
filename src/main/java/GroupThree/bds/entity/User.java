@@ -61,6 +61,7 @@ public class User implements UserDetails {
     private List<PropertyListings> propertyListings;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<Projects> projects;
 
     @Column(name = "create_at")

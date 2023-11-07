@@ -14,7 +14,6 @@ import lombok.*;
 import java.util.Date;
 import java.util.List;
 
-import static com.fasterxml.jackson.annotation.JsonFormat.Shape.STRING;
 
 @AllArgsConstructor @NoArgsConstructor
 @Getter @Setter @Builder
@@ -32,13 +31,13 @@ public class ProjectDTO {
 
     @JsonProperty("launch_date")
     @NotBlank(message = "Launch Date Name is required")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", shape = STRING)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date launchDate; // ngay ra mat
 
     @JsonProperty("expected_completion")
     @NotBlank(message = "Expected Completion is required")
     @Future(message = "The expected completion date must be in the future.")
-    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", shape = STRING)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date expectedCompletion; // ky vong hoan thanh
 
     @Size(min = 10, max = 200, message = "Location must be between 10 and 200 characters")

@@ -43,7 +43,6 @@ public class ProjectController {
             }
             Projects newProject = service.insertNewProject(dto);
             return new ResponseEntity<>(newProject, CREATED);
-
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

@@ -6,6 +6,7 @@ import GroupThree.bds.entity.*;
 import GroupThree.bds.exceptions.AppException;
 import GroupThree.bds.exceptions.DataNotFoundException;
 import GroupThree.bds.exceptions.InvalidParamException;
+import GroupThree.bds.repository.ProjectRepository;
 import GroupThree.bds.repository.PropertyImageRepository;
 import GroupThree.bds.repository.PropertyListingsRepository;
 import GroupThree.bds.repository.UserRepository;
@@ -35,6 +36,7 @@ public class PropertyListingsImplService implements IPropertyListingsService {
     private final PropertyImageRepository imageRepository;
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final ProjectRepository projectRepository;
 
     @Override
     public PropertyListings createPropertyListings(PropertyListingsDTO dto) {
@@ -63,12 +65,18 @@ public class PropertyListingsImplService implements IPropertyListingsService {
 //                    .listingStatus(dto.getListingStatus())
                     .build();
 
+            Projects existingProject = projectRepository.findById(dto.getProjects())
+                    .orElseThrow(() -> new AppException("Project not found",NOT_FOUND));
+
+            propertyListings.setProjects(existingProject);
+
             if (propertyListings.getCode() == null || propertyListings.getCode().isEmpty()) {
                 propertyListings.setCode(generateUniqueCode());
             }
             propertyListings.setUser(user);
 
             return repository.save(propertyListings);
+
         }
         return null;
     }

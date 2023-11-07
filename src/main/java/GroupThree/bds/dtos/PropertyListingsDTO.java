@@ -77,5 +77,6 @@ public class PropertyListingsDTO {
     @JsonProperty("user_id")
     private Long user;
 
-
+    @JsonProperty("project_id")
+    private Long projects;
 }

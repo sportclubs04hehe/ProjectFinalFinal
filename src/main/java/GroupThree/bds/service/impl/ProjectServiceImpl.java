@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
@@ -35,43 +36,47 @@ public class ProjectServiceImpl implements IProjectService {
     @Override
     public Projects insertNewProject(ProjectDTO dto) {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+       try {
+           Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication != null) {
-            User user = (User) authentication.getPrincipal();
+           if (authentication != null) {
+               User user = (User) authentication.getPrincipal();
 
-            Projects projects = Projects.builder()
-                    .projectName(dto.getProjectName())
-                    .developerName(dto.getDeveloperName())
-                    .launchDate(dto.getLaunchDate())
-                    .expectedCompletion(dto.getExpectedCompletion())
-                    .amenities(dto.getAmenities())
-                    .location(dto.getLocation())
-                    .projectStatus(dto.getProjectStatus())
-                    .user(user)
-                    .build();
+               Projects projects = Projects.builder()
+                       .projectName(dto.getProjectName())
+                       .developerName(dto.getDeveloperName())
+                       .launchDate(dto.getLaunchDate())
+                       .expectedCompletion(dto.getExpectedCompletion())
+                       .amenities(dto.getAmenities())
+                       .location(dto.getLocation())
+                       .projectStatus(dto.getProjectStatus())
+                       .user(user)
+                       .build();
 
-            if(dto.getPropertyListings() != null){
-                List<PropertyListings> propertyListings = new ArrayList<>();
-                for(PropertyListingsDTO propertyListingsDTO : dto.getPropertyListings()){
-                    PropertyListings existingProperty = listingsRepository.findById(propertyListingsDTO.getId())
-                            .orElseThrow(() -> new AppException(
-                                    "Property with id= " + dto.getPropertyListings() + " not found", NOT_FOUND
-                            ));
-                    if(existingProperty != null){
-                        propertyListings.add(existingProperty);
-                    }else {
-                        PropertyListings newPropertyListings = new PropertyListings();
-                        modelMapper.map(propertyListingsDTO, newPropertyListings);
-                        propertyListings.add(newPropertyListings);
-                    }
+               if(dto.getPropertyListings() != null){
+                   List<PropertyListings> propertyListings = new ArrayList<>();
+                   for(PropertyListingsDTO propertyListingsDTO : dto.getPropertyListings()){
+                       PropertyListings existingProperty = listingsRepository.findById(propertyListingsDTO.getId())
+                               .orElseThrow(() -> new AppException(
+                                       "Property with id= " + dto.getPropertyListings() + " not found", NOT_FOUND
+                               ));
+                       if(existingProperty != null){
+                           propertyListings.add(existingProperty);
+                       }else {
+                           PropertyListings newPropertyListings = new PropertyListings();
+                           modelMapper.map(propertyListingsDTO, newPropertyListings);
+                           propertyListings.add(newPropertyListings);
+                       }
 
-                }
-                projects.setPropertyListings(propertyListings);
-            }
+                   }
+                   projects.setPropertyListings(propertyListings);
+               }
 
-            return repository.save(projects);
-        }
+               return repository.save(projects);
+           }
+       }catch (Exception e){
+           throw new AppException(e.getMessage(),BAD_REQUEST);
+       }
         return null;
     }
 }
