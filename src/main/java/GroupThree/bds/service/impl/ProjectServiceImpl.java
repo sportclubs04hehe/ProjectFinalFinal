@@ -3,6 +3,7 @@ package GroupThree.bds.service.impl;
 import GroupThree.bds.configurations.AuthenticationFacade;
 import GroupThree.bds.dtos.ProjectDTO;
 import GroupThree.bds.entity.Projects;
+import GroupThree.bds.entity.Role;
 import GroupThree.bds.entity.User;
 import GroupThree.bds.exceptions.AppException;
 import GroupThree.bds.repository.ProjectRepository;
@@ -13,6 +14,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -26,38 +29,25 @@ public class ProjectServiceImpl implements IProjectService {
 
     private final ProjectRepository repository;
     private final UserService userService;
-    private final UserRepository userRepository;
     private final ModelMapper modelMapper;
     private final AuthenticationFacade authenticationFacade;
 
     @Override
     @Transactional
     public Projects insertNewProject(ProjectDTO dto) {
-        Projects projects = modelMapper.map(dto,Projects.class);
+        Projects projects = modelMapper.map(dto, Projects.class);
 
         String currentPhoneNumberUser = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userService.findByPhoneNumber(currentPhoneNumberUser);
 
         projects.setUser(currentUser);
         return repository.save(projects);
-
-//        if (dto.getUserId() == null) {
-//            throw new IllegalArgumentException("User ID is null");
-//        }
-//
-//        User user = userRepository.findById(dto.getUserId())
-//                .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + dto.getUserId()));
-//
-//        Projects project = modelMapper.map(dto, Projects.class);
-//        project.setUser(user); // Assign the found user to the project
-//
-//        return repository.save(project);
     }
 
     @Override
     public Projects updateProject(ProjectDTO dto, Long id) {
-        Projects existingProject  = repository.findById(id)
-                .orElseThrow(() -> new AppException("Project with id= "+ id + " not found", NOT_FOUND));
+        Projects existingProject = repository.findById(id)
+                .orElseThrow(() -> new AppException("Project with id= " + id + " not found", NOT_FOUND));
 
         User currentUser = authenticationFacade.getCurrentUser();
 
@@ -66,7 +56,7 @@ public class ProjectServiceImpl implements IProjectService {
         }
 
         if (!existingProject.getProjectName().equals(dto.getProjectName())) {
-            throw new AppException("Project name cannot be changed",BAD_REQUEST);
+            throw new AppException("Project name cannot be changed", BAD_REQUEST);
         }
 
         existingProject.setProjectName(dto.getProjectName());
@@ -82,8 +72,8 @@ public class ProjectServiceImpl implements IProjectService {
 
     @Override
     public void deleteProject(Long id) {
-        Projects existingProject  = repository.findById(id)
-                .orElseThrow(() -> new AppException("Project with id= "+ id + " not found", NOT_FOUND));
+        Projects existingProject = repository.findById(id)
+                .orElseThrow(() -> new AppException("Project with id= " + id + " not found", NOT_FOUND));
 
         User currentUser = authenticationFacade.getCurrentUser();
 
@@ -94,5 +84,20 @@ public class ProjectServiceImpl implements IProjectService {
 
         repository.delete(existingProject);
     }
+
+    @Override
+    public Page<Projects> getAllProjects(PageRequest pageRequest) {
+
+        User currentUser = authenticationFacade.getCurrentUser();
+        boolean isAdmin = currentUser.getRole().getName().equals(Role.ADMIN);
+
+        if(isAdmin){
+            return repository.findAll(pageRequest);
+        }else {
+            Long currentUserId = currentUser.getId();
+            return repository.findProjectsById(currentUserId, pageRequest);
+        }
+    }
+
 
 }
