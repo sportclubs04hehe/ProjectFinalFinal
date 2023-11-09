@@ -12,8 +12,10 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.CorsConfigurer;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
@@ -33,11 +35,12 @@ public class WebSecurityConfig {
     private final JwtTokenFilter jwtTokenFilter;
     @Value("${api.prefix}")
     private String apiPrefix;
+    private final LogoutHandler logoutHandler;
+
     @Bean
     //Pair.of(String.format("%s/products", apiPrefix), "GET"),
-    public SecurityFilterChain securityFilterChain(HttpSecurity http)  throws Exception{
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(requests -> {
                     requests
@@ -46,6 +49,9 @@ public class WebSecurityConfig {
                                     String.format("%s/users/authenticate", apiPrefix)
                             )
                             .permitAll()
+
+                            .requestMatchers(GET,
+                                    String.format("%s/hi/**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
 
                             .requestMatchers(POST,
                                     String.format("%s/properties/**", apiPrefix)).hasAnyRole(Role.ADMIN, Role.USER)
@@ -79,10 +85,14 @@ public class WebSecurityConfig {
                     //.anyRequest().permitAll();
 
                 })
-                .csrf(AbstractHttpConfigurer::disable);
+                .csrf(AbstractHttpConfigurer::disable)
+                .logout(logout ->
+                        logout
+                                .logoutUrl("/api/v1/users/logout")
+                                .addLogoutHandler(logoutHandler)
+                                .logoutSuccessHandler(((request, response, authentication) ->
+                                        SecurityContextHolder.clearContext())));
 
-        // Xong lúc nào ông nhận api thì ghép khớp đường dẫn là được, vì ở đây tôi cấu hình
-        // full quyền rồi
         http.cors(new Customizer<CorsConfigurer<HttpSecurity>>() {
             @Override
             public void customize(CorsConfigurer<HttpSecurity> httpSecurityCorsConfigurer) {

@@ -4,12 +4,16 @@ import GroupThree.bds.components.JwtTokenUtils;
 import GroupThree.bds.dtos.UpdateUserDTO;
 import GroupThree.bds.dtos.UserDTO;
 import GroupThree.bds.entity.Role;
+import GroupThree.bds.entity.Token;
+import GroupThree.bds.entity.TokenType;
 import GroupThree.bds.entity.User;
 import GroupThree.bds.exceptions.AppException;
 import GroupThree.bds.exceptions.DataNotFoundException;
 import GroupThree.bds.exceptions.PermissionDenyException;
 import GroupThree.bds.repository.RoleRepository;
+import GroupThree.bds.repository.TokenRepository;
 import GroupThree.bds.repository.UserRepository;
+import GroupThree.bds.response.AuthenticationResponse;
 import GroupThree.bds.service.IUserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,10 +38,11 @@ public class UserService implements IUserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenUtils jwtTokenUtil;
     private final AuthenticationManager authenticationManager;
+    private final TokenRepository tokenRepository;
 
     @Override
     @Transactional
-    public User createUser(UserDTO userDTO) throws Exception {
+    public AuthenticationResponse createUser(UserDTO userDTO) throws Exception {
         //register user
         String phoneNumber = userDTO.getPhoneNumber();
         // Kiểm tra xem số điện thoại đã tồn tại hay chưa
@@ -69,7 +74,69 @@ public class UserService implements IUserService {
             String encodedPassword = passwordEncoder.encode(password);
             newUser.setPassword(encodedPassword);
         }
-        return userRepository.save(newUser);
+
+        var savedUser = userRepository.save(newUser);
+        var jwtToken = jwtTokenUtil.generateToken(newUser);
+        var token = Token.builder()
+                .user(savedUser)
+                .token(jwtToken)
+                .tokenType(TokenType.BEARER)
+                .revoked(false)
+                .expired(false)
+                .build();
+        tokenRepository.save(token);
+        return AuthenticationResponse.builder()
+                .accessToken(jwtToken)
+                .build();
+
+    }
+
+    @Override
+    @Transactional
+    public AuthenticationResponse createUserWithAdmin(UserDTO userDTO) throws Exception {
+        //register user
+        String phoneNumber = userDTO.getPhoneNumber();
+
+        if(userRepository.existsByPhoneNumber(phoneNumber)) {
+            throw new DataIntegrityViolationException("Phone number already exists");
+        }
+        Role role = roleRepository.findById(userDTO.getRoleId())
+                .orElseThrow(() -> new DataNotFoundException("Role not found"));
+
+        User newUser = User.builder()
+                .fullName(userDTO.getFullName())
+                .phoneNumber(userDTO.getPhoneNumber())
+                .password(userDTO.getPassword())
+                .address(userDTO.getAddress())
+                .dateOfBirth(userDTO.getDateOfBirth())
+                .facebookAccountId(userDTO.getFacebookAccountId())
+                .googleAccountId(userDTO.getGoogleAccountId())
+                .active(true)
+                .build();
+
+        newUser.setRole(role);
+
+        // Kiểm tra nếu có accountId, không yêu cầu password
+        if (userDTO.getFacebookAccountId() == 0 && userDTO.getGoogleAccountId() == 0) {
+            String password = userDTO.getPassword();
+            String encodedPassword = passwordEncoder.encode(password);
+            newUser.setPassword(encodedPassword);
+        }
+
+        var savedUser = userRepository.save(newUser);
+        var jwtToken = jwtTokenUtil.generateToken(newUser);
+        var token = Token.builder()
+                .user(savedUser)
+                .token(jwtToken)
+                .tokenType(TokenType.BEARER)
+                .revoked(false)
+                .expired(false)
+                .build();
+        tokenRepository.save(token);
+        return AuthenticationResponse.builder()
+                .accessToken(jwtToken)
+                .build();
+
     }
 
     @Override
@@ -88,7 +155,7 @@ public class UserService implements IUserService {
                 throw new BadCredentialsException("Password not match");
             }
         }
-        //dkm sao mỗi máy chạy một khác à, à đm còn phải xác nhận quyền. conđĩ mẹ
+
         Optional<Role> optionalRole = roleRepository.findById(roleId);
         if(optionalRole.isEmpty() || !roleId.equals(existingUser.getRole().getId())) {
             throw new DataNotFoundException("Role not found");
@@ -99,7 +166,8 @@ public class UserService implements IUserService {
 
         existingUser.setOnlyUpdateLastLogin(true);
         existingUser.setLastLoginAt(LocalDateTime.now());
-        userRepository.save(existingUser);
+
+        var savedUser = userRepository.save(existingUser);
 
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
                 phoneNumber, password,
@@ -108,7 +176,33 @@ public class UserService implements IUserService {
 
         //authenticate with Java Spring security
         authenticationManager.authenticate(authenticationToken);
-        return jwtTokenUtil.generateToken(existingUser);
+        var jwtToken = jwtTokenUtil.generateToken(existingUser);
+
+        revokeAllUserTokens(existingUser);
+
+        var token = Token.builder()
+                .user(savedUser)
+                .token(jwtToken)
+                .tokenType(TokenType.BEARER)
+                .revoked(false)
+                .expired(false)
+                .build();
+        tokenRepository.save(token);
+
+        return jwtToken;
+    }
+
+    private void revokeAllUserTokens(User user){
+        var validUserToken = tokenRepository.findAllValidTokensByUsers(user.getId());
+        if(validUserToken.isEmpty()){
+            return;
+        }
+
+        validUserToken.forEach(t -> {
+            t.setRevoked(true);
+            t.setExpired(true);
+        });
+        tokenRepository.saveAll(validUserToken);
     }
 
     @Override

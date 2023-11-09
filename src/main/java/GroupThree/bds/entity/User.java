@@ -64,6 +64,9 @@ public class User implements UserDetails {
     @JsonManagedReference
     private List<Projects> projects;
 
+    @OneToMany(mappedBy = "user")
+    private List<Token> tokens;
+
     @Column(name = "create_at")
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createAt;

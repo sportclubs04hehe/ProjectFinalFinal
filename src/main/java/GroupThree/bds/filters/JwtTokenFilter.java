@@ -2,6 +2,7 @@ package GroupThree.bds.filters;
 
 import GroupThree.bds.components.JwtTokenUtils;
 import GroupThree.bds.entity.User;
+import GroupThree.bds.repository.TokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,8 +27,11 @@ import java.util.List;
 public class JwtTokenFilter extends OncePerRequestFilter {
     @Value("${api.prefix}")
     private String apiPrefix;
+
     private final UserDetailsService userDetailsService;
     private final JwtTokenUtils jwtTokenUtil;
+    private final TokenRepository tokenRepository;
+
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
                                     @NonNull HttpServletResponse response,
@@ -48,7 +52,12 @@ public class JwtTokenFilter extends OncePerRequestFilter {
             if (phoneNumber != null
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
                 User userDetails = (User) userDetailsService.loadUserByUsername(phoneNumber);
-                if(jwtTokenUtil.validateToken(token, userDetails)) {
+
+                var isTokenValid = tokenRepository.findByToken(token)
+                        .map(t -> !t.isExpired() && !t.isRevoked())
+                        .orElse(false);
+
+                if(jwtTokenUtil.validateToken(token, userDetails) && isTokenValid) {
                     UsernamePasswordAuthenticationToken authenticationToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,

@@ -4,6 +4,7 @@ import GroupThree.bds.dtos.UpdateUserDTO;
 import GroupThree.bds.dtos.UserDTO;
 import GroupThree.bds.dtos.UserLoginDTO;
 import GroupThree.bds.entity.User;
+import GroupThree.bds.response.AuthenticationResponse;
 import GroupThree.bds.response.LoginResponse;
 import GroupThree.bds.response.RegisterResponse;
 import GroupThree.bds.response.UserResponse;
@@ -49,10 +50,10 @@ public class UserController {
         }
 
         try {
-            User user = userService.createUser(userDTO);
+            AuthenticationResponse response = userService.createUser(userDTO);
 //            registerResponse.setMessage(localizationUtils.getLocalizedMessage(MessageKeys.REGISTER_SUCCESSFULLY));
             registerResponse.setMessage("create ok");
-            registerResponse.setUser(user);
+            registerResponse.setResponse(response);
             return ResponseEntity.ok(registerResponse);
         } catch (Exception e) {
             registerResponse.setMessage(e.getMessage());

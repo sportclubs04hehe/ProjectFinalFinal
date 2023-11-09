@@ -1,5 +1,6 @@
 package GroupThree.bds.dtos;
 
+import GroupThree.bds.entity.Role;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -40,6 +41,9 @@ public class UserDTO {
 
     @JsonProperty("google_account_id")
     private int googleAccountId;
+
+    @JsonProperty("active")
+    private boolean active;
 
     @NotNull(message = "Role ID is required")
     @JsonProperty("role_id")

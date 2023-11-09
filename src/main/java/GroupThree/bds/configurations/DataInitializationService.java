@@ -1,15 +1,13 @@
 package GroupThree.bds.configurations;
 
+import GroupThree.bds.dtos.UserDTO;
 import GroupThree.bds.entity.Role;
-import GroupThree.bds.entity.User;
 import GroupThree.bds.repository.RoleRepository;
 import GroupThree.bds.repository.UserRepository;
-import jakarta.transaction.Transactional;
+import GroupThree.bds.service.impl.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,7 +16,7 @@ public class DataInitializationService implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final PasswordEncoder encoder;
+    private final UserService service;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -39,25 +37,26 @@ public class DataInitializationService implements ApplicationRunner {
 
     }
 
-    private void initializeAdminUser() {
+    private void initializeAdminUser() throws Exception {
         if (userRepository.findByPhoneNumber("0966887766").isEmpty()) {
-            Role adminRole = roleRepository.findByName("ADMIN");
+            Long adminRole = 1L;
 
-            if (adminRole != null) {
-                String encodePassword = encoder.encode("12345");
-                User user = User.builder()
-                        .fullName("Admin")
-                        .phoneNumber("0966887766")
-                        .password(encodePassword)
-                        .address("Hai Phong")
-                        .facebookAccountId(0)
-                        .googleAccountId(0)
-                        .active(true)
-                        .role(adminRole)
-                        .build();
+            var user = UserDTO.builder()
+                    .fullName("Admin")
+                    .phoneNumber("0966887766")
+                    .password("12345")
+                    .address("Hai Phong")
+                    .facebookAccountId(0)
+                    .googleAccountId(0)
+                    .active(true)
+                    .roleId(adminRole)
+                    .build();
 
-                userRepository.save(user);
-            }
+            var created = service.createUserWithAdmin(user).getAccessToken();
+            System.out.println();
+            System.out.println();
+            System.out.println("Admin Token= " + created);
+
         }
     }
 }
